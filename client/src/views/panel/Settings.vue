@@ -1,0 +1,165 @@
+<template>
+    <div class="onp-settings">
+        <b-row class="mt-3">
+            <b-col>
+                <b-card
+                    border-variant="properties"
+                    header="مشخصات فردی"
+                    header-border-variant="properties"
+                    align="right"
+                >
+                    <b-row>
+                        <b-col>
+                            <span class="font-weight-bold">نام و نام‌خانوادگی:</span>
+                        </b-col>
+                        <b-col>
+                            <b-form-input type="text" v-model="user.fullname"></b-form-input>
+                        </b-col>
+                    </b-row>
+                    <b-row class="mt-3">
+                        <b-col>
+                            <span class="font-weight-bold">نام کاربری:</span>
+                        </b-col>
+                        <b-col>
+                            <b-form-input type="text" v-model="user.username"></b-form-input>
+                        </b-col>
+                    </b-row>
+                    <b-row class="mt-3">
+                        <b-col>
+                            <span class="font-weight-bold">شماره تلفن:</span>
+                        </b-col>
+                        <b-col>
+                            <b-form-input type="text" v-model="user.phone"></b-form-input>
+                        </b-col>
+                    </b-row>
+                    <b-row class="mt-3">
+                        <b-col>
+                            <span class="font-weight-bold">ایمیل:</span>
+                        </b-col>
+                        <b-col>
+                            <b-form-input type="user.email" v-model="user.email"></b-form-input>
+                        </b-col>
+                    </b-row>
+                    <b-row class="mt-3">
+                        <b-col>
+                            <b-button type="button" variant="primary">ذخیره</b-button>
+                        </b-col>
+                    </b-row>
+                </b-card>
+            </b-col>
+            <b-col>
+                <b-card
+                    border-variant="api_keys"
+                    header="مشخصات وب سایت"
+                    header-border-variant="api_keys"
+                    align="right"
+                >
+                    <b-row>
+                        <b-col md="3">
+                            <span class="font-weight-bold">آدرس سایت:</span>
+                        </b-col>
+                        <b-col md="9">
+                            <b-form-input type="text" v-model="userWebsite._address" placeholder="بدون //:http و .www"></b-form-input>
+                        </b-col>
+                    </b-row>
+                    <b-row class="mt-3">
+                        <b-col md="3">
+                            <span class="font-weight-bold">کلید مصرف‌کننده:</span>
+                        </b-col>
+                        <b-col md="9">
+                            <b-form-input type="text" v-model="userWebsite._consumer_key" placeholder="public key"></b-form-input>
+                        </b-col>
+                    </b-row>
+                    <b-row class="mt-3">
+                        <b-col md="3">
+                            <span class="font-weight-bold">رمز مصرف‌کننده:</span>
+                        </b-col>
+                        <b-col md="9">
+                            <b-form-input type="text" v-model="userWebsite._consumer_secret" placeholder="private key"></b-form-input>
+                        </b-col>
+                    </b-row>
+                    <b-row class="mt-3">
+                        <b-col>
+                            <b-button type="button" variant="primary" @click="saveUserWebsiteData">ذخیره</b-button>
+                        </b-col>
+                    </b-row>
+                </b-card>
+            </b-col>
+        </b-row>
+        <b-row class="mt-3">
+            <b-col>
+                <b-card
+                    border-variant="properties"
+                    header="همگام‌سازی محصولات"
+                    header-border-variant="properties"
+                    align="center"
+                >
+                    <b-row>
+                        <b-col>
+                            <b-button type="button" variant="primary">شروع کن</b-button>
+                        </b-col>
+                    </b-row>
+                </b-card>
+            </b-col>
+            <b-col>
+                <b-card
+                    border-variant="api_keys"
+                    header="همگام‌سازی دسته‌بندی‌ها"
+                    header-border-variant="api_keys"
+                    align="center"
+                >
+                    <b-row>
+                        <b-col>
+                            <b-button type="button" variant="primary">شروع کن</b-button>
+                        </b-col>
+                    </b-row>
+                </b-card>
+            </b-col>
+            <b-col>
+                <b-card
+                    border-variant="properties"
+                    header="همگام‌سازی سفارشات"
+                    header-border-variant="properties"
+                    align="center"
+                >
+                    <b-row>
+                        <b-col>
+                            <b-button type="button" variant="primary">شروع کن</b-button>
+                        </b-col>
+                    </b-row>
+                </b-card>
+            </b-col>
+        </b-row>
+    </div>
+</template>
+
+<script>
+import { mapState } from 'vuex'
+export default {
+    name: 'Settings',
+    data () {
+        return {}
+    },
+    beforeCreate () {
+        this.$store.dispatch('settings/getUserMeta', this.user.id)
+    },
+    methods: {
+        saveUserWebsiteData () {
+            this.$store.dispatch('settings/setUserWebsiteData', this.userWebsite)
+        },
+        syncVariableProducts () {
+            this.$store.dispatch('settings/syncVariableProducts')
+        }
+    },
+    computed: {
+        ...mapState({
+            user: state => state.auth.user,
+            userWebsite: state => state.settings.userWebsite
+        })
+    }
+}
+</script>
+
+<style scoped>
+
+</style>

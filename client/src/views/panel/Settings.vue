@@ -37,12 +37,12 @@
                             <span class="font-weight-bold">ایمیل:</span>
                         </b-col>
                         <b-col>
-                            <b-form-input type="user.email" v-model="user.email"></b-form-input>
+                            <b-form-input type="text" v-model="user.email"></b-form-input>
                         </b-col>
                     </b-row>
                     <b-row class="mt-3">
                         <b-col>
-                            <b-button type="button" variant="primary">ذخیره</b-button>
+                            <b-button variant="primary">ذخیره</b-button>
                         </b-col>
                     </b-row>
                 </b-card>
@@ -80,7 +80,7 @@
                     </b-row>
                     <b-row class="mt-3">
                         <b-col>
-                            <b-button type="button" variant="primary" @click="saveUserWebsiteData">ذخیره</b-button>
+                            <b-button variant="primary" @click="saveUserWebsiteData">ذخیره</b-button>
                         </b-col>
                     </b-row>
                 </b-card>
@@ -96,7 +96,7 @@
                 >
                     <b-row>
                         <b-col>
-                            <b-button type="button" variant="primary">شروع کن</b-button>
+                            <b-button variant="primary">شروع کن</b-button>
                         </b-col>
                     </b-row>
                 </b-card>
@@ -110,7 +110,7 @@
                 >
                     <b-row>
                         <b-col>
-                            <b-button type="button" variant="primary">شروع کن</b-button>
+                            <b-button variant="primary">شروع کن</b-button>
                         </b-col>
                     </b-row>
                 </b-card>
@@ -124,7 +124,7 @@
                 >
                     <b-row>
                         <b-col>
-                            <b-button type="button" variant="primary">شروع کن</b-button>
+                            <b-button variant="primary">شروع کن</b-button>
                         </b-col>
                     </b-row>
                 </b-card>
@@ -140,8 +140,8 @@ export default {
     data () {
         return {}
     },
-    beforeCreate () {
-        this.$store.dispatch('settings/getUserMeta', this.user.id)
+    beforeMount () {
+        this.$store.dispatch('settings/getUserWebsiteData', this.user.id)
     },
     methods: {
         saveUserWebsiteData () {

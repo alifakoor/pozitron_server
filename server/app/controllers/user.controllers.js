@@ -17,8 +17,9 @@ exports.getUserWebsiteData = (req, res) => {
             userId: req.body.id
         }
     }).then(founded_meta => {
-        founded_meta.dataValues = _.chain(founded_meta).keyBy('meta_key').mapValues('meta_value').value()
+        founded_meta = _.chain(founded_meta).keyBy('meta_key').mapValues('meta_value').value()
         console.log(founded_meta)
+        res.json(founded_meta)
     }).catch(err => console.log(err))
 }
 

@@ -17,10 +17,10 @@ export const settings = {
 
     },
     actions: {
-        getUserMeta ({ commit }, userId) {
+        getUserWebsiteData ({ commit }, userId) {
             return axios.post(API_URL + 'get_user_website', { id: userId }, { headers: authHeader() }).then((res) => {
                 if (res.status) {
-                    commit('setUserMeta', res.data)
+                    commit('setUserWebsiteData', res.data)
                 }
             }).catch(err => console.log(err))
         },
@@ -40,10 +40,8 @@ export const settings = {
         }
     },
     mutations: {
-        setUserMeta (state, userMeta) {
-            state.userWebsite.address = userMeta._address
-            state.userWebsite.consumerKey = userMeta._consumer_key
-            state.userWebsite.consumerSecret = userMeta._consumer_secret
+        setUserWebsiteData (state, userMeta) {
+            state.userWebsite = userMeta
         }
     }
 }

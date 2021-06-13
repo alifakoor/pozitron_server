@@ -88,18 +88,23 @@
         </b-row>
         <b-row class="mt-3">
             <b-col>
-                <b-card
-                    border-variant="properties"
-                    header="همگام‌سازی محصولات"
-                    header-border-variant="properties"
-                    align="center"
-                >
-                    <b-row>
-                        <b-col>
-                            <b-button variant="primary">شروع کن</b-button>
-                        </b-col>
-                    </b-row>
-                </b-card>
+                <b-overlay :show="loading">
+                    <b-card
+                        border-variant="properties"
+                        header="همگام‌سازی محصولات"
+                        header-border-variant="properties"
+                        align="center"
+                        :aria-hidden="loading ? true : null"
+                    >
+                        <b-row>
+                            <b-col>
+                                <b-button variant="primary" @click="syncProducts">
+                                    شروع کن
+                                </b-button>
+                            </b-col>
+                        </b-row>
+                    </b-card>
+                </b-overlay>
             </b-col>
             <b-col>
                 <b-card
@@ -138,7 +143,9 @@ import { mapState } from 'vuex'
 export default {
     name: 'Settings',
     data () {
-        return {}
+        return {
+            loading: false
+        }
     },
     beforeMount () {
         this.$store.dispatch('settings/getUserWebsiteData', this.user.id)
@@ -149,6 +156,9 @@ export default {
         },
         syncVariableProducts () {
             this.$store.dispatch('settings/syncVariableProducts')
+        },
+        syncProducts () {
+            this.$store.dispatch('settings/syncProducts')
         }
     },
     computed: {

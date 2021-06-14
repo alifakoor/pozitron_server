@@ -10,19 +10,5 @@ module.exports = function(app) {
         next()
     })
 
-    app.post(
-        "/api/categories/all",
-        [
-            authJWT.verifyToken
-        ],
-        controller.categories
-    )
-
-    app.post(
-        "/api/categories/sync",
-        [
-            authJWT.verifyToken
-        ],
-        controller.syncCategories
-    )
+    app.post("/api/categories/all", [ authJWT.verifyToken ], controller.categories)
 }

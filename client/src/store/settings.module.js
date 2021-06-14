@@ -44,6 +44,15 @@ export const settings = {
                     console.log(res)
                 }
             }).catch(err => console.log(err))
+        },
+        syncCategories ({ commit }) {
+            return axios.post(API_URL + 'sync_categories', {}, { headers: authHeader() })
+                .then((res) => {
+                    if (res.status) {
+                        console.log(res)
+                    }
+                })
+                .catch(err => console.log(err))
         }
     },
     mutations: {

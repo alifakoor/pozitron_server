@@ -90,9 +90,9 @@
             <b-col>
                 <b-overlay :show="loading">
                     <b-card
-                        border-variant="properties"
+                        border-variant="sync_products"
                         header="همگام‌سازی محصولات"
-                        header-border-variant="properties"
+                        header-border-variant="sync_products"
                         align="center"
                         :aria-hidden="loading ? true : null"
                     >
@@ -107,18 +107,20 @@
                 </b-overlay>
             </b-col>
             <b-col>
-                <b-card
-                    border-variant="api_keys"
-                    header="همگام‌سازی دسته‌بندی‌ها"
-                    header-border-variant="api_keys"
-                    align="center"
-                >
-                    <b-row>
-                        <b-col>
-                            <b-button variant="primary">شروع کن</b-button>
-                        </b-col>
-                    </b-row>
-                </b-card>
+                <b-overlay :show="loading">
+                    <b-card
+                        border-variant="sync_categories"
+                        header="همگام‌سازی دسته‌بندی‌ها"
+                        header-border-variant="sync_categories"
+                        align="center"
+                    >
+                        <b-row>
+                            <b-col>
+                                <b-button variant="primary" @click="syncCategories">شروع کن</b-button>
+                            </b-col>
+                        </b-row>
+                    </b-card>
+                </b-overlay>
             </b-col>
             <b-col>
                 <b-card
@@ -159,6 +161,9 @@ export default {
         },
         syncProducts () {
             this.$store.dispatch('settings/syncProducts')
+        },
+        syncCategories () {
+            this.$store.dispatch('settings/syncCategories')
         }
     },
     computed: {

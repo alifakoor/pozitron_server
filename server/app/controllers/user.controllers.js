@@ -11,18 +11,81 @@ const WC = require('@woocommerce/woocommerce-rest-api').default
 const Op = DB.Sequelize.Op
 const USER = DB.user
 const USER_META = DB.usermeta
+const TERM = DB.term
+const TERM_META = DB.termmeta
 
+const user = {
+    getWebsiteData: async (userId) => {
+        return await USER_META.findAll({
+            where: {
+                userId: userId
+            }
+        }).then((founded_row) => {
+            if (founded_row.length !== 0) {
+                return _.chain(founded_row).keyBy('meta_key').mapValues('meta_value').value()
+            } else {
+                return false
+            }
+        }).catch(err => console.log(err))
+    },
+    createWcApi: (websiteData) => {
+        return new WC ({
+            url: "https://"+websiteData._address,
+            consumerKey: websiteData._consumer_key,
+            consumerSecret: websiteData._consumer_secret,
+            version: websiteData._api_version
+        })
+    },
+    createTerm: (term) => {
+        return TERM.create({
+            name: term.name,
+            description: term.description,
+            slug: decodeURIComponent(term.slug),
+            count: term.count,
+            type: 'category',
+            status: 'active'
+        }).then((created_row) => {
+            TERM_META.bulkCreate([
+                {
+                    meta_key: '_wc_id',
+                    meta_value: term.id,
+                    termId: created_row.id
+                },
+                {
+                    meta_key: '_links',
+                    meta_value: JSON.stringify(term._links),
+                    termId: created_row.id
+                }
+            ]).catch((err) => {
+                throw new Error(`Term Meta Not created, ERROR: ${err}`)
+            })
+            return created_row
+        }).then((created_term) => {
+            if (term.parent !== 0) {
+                TERM_META.findOne({
+                    where: { meta_key: '_wc_id', meta_value: term.parent }
+                }).then((founded_parent_row) => {
+                    created_term.update({
+                        parent_id: Number(founded_parent_row.termId)
+                    })
+                }).catch(err => {
+                    throw new Error(`Term Meta for Parent Not Found, Error: ${err}`)
+                })
+            }
+            return created_term
+        }).catch(err => {
+            throw new Error(`Term Not Created, ERROR: ${err}`)
+        })
+    }
+}
 
-
-exports.getUserWebsiteData = (req, res) => {
-    USER_META.findAll({
-        where: {
-            userId: req.body.id
-        }
-    }).then(founded_meta => {
-        founded_meta = _.chain(founded_meta).keyBy('meta_key').mapValues('meta_value').value()
-        res.json(founded_meta)
-    }).catch(err => console.log(err))
+exports.getUserWebsiteData = async (req, res) => {
+    const website = await user.getWebsiteData(req.body.id)
+    if (website) {
+        res.json(website)
+    } else {
+        throw new Error('Website not found!')
+    }
 }
 
 exports.setUserWebsiteData = (req, res) => {
@@ -41,6 +104,11 @@ exports.setUserWebsiteData = (req, res) => {
             meta_key: '_consumer_secret',
             meta_value: req.body._consumer_secret,
             userId: req.userId
+        },
+        {
+            meta_key: '_api_version',
+            meta_value: 'wc/v3',
+            userId: req.userId
         }
     ],{
         updateOnDuplicate: ['meta_value']
@@ -50,6 +118,37 @@ exports.setUserWebsiteData = (req, res) => {
 }
 
 exports.syncCategories = async (req, res) => {
+
+    const website = await user.getWebsiteData(req.userId)
+    if (website) {
+        const api = user.createWcApi(website)
+        let page, total_page
+        page = total_page = 0
+        do {
+            await api.get("products/categories", { page: ++page, per_page: 2, orderby: 'id' })
+                .then(response => {
+                    total_page = Number(response.headers['x-wp-totalpages'])
+                    response.data.map(async (category) => {
+                        await user.createTerm(category)
+                    })
+                    return true
+                })
+                .then(response => {
+                    if (response) {
+                        res.status(200).json({ message: 'Categories Sync was Successful.'})
+                    }
+                })
+                .catch((err) => {
+                    console.log("Response Status:", err.response.status)
+                    console.log("Response Headers:", err.response.headers)
+                    console.log("Response Data:", err.response.data)
+                })
+                .finally(() => {})
+        } while (page < total_page)
+
+    }
+
+    /*
     const api = new WC({
         url: "https://onlinenow.ir/sandbox-onlinenow-pos",
         consumerKey: 'ck_4cc138d1e8246431b4f35ff838c19470754147de',
@@ -129,6 +228,7 @@ exports.syncCategories = async (req, res) => {
     res.status(200).send({
         message: 'sync was successful. enjoy!'
     })
+     */
 }
 
 exports.syncProducts = (req, res) => {

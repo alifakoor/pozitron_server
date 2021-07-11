@@ -31,28 +31,39 @@ export const settings = {
                 }
             }).catch(err => console.log(err))
         },
-        syncVariableProducts () {
-            return axios.post(API_URL + 'sync_variable_products', {}, { headers: authHeader() }).then((res) => {
-                console.log(res)
-            }).catch((err) => {
-                console.log(err)
-            })
-        },
-        syncProducts ({ commit }) {
-            return axios.post(API_URL + 'sync_products', {}, { headers: authHeader() }).then((res) => {
-                if (res.status) {
-                    console.log(res)
-                }
-            }).catch(err => console.log(err))
-        },
         syncCategories ({ commit }) {
             return axios.post(API_URL + 'sync_categories', {}, { headers: authHeader() })
                 .then((res) => {
                     if (res.status) {
-                        console.log(res)
+                        console.log(res.data)
                     }
                 })
                 .catch(err => console.log(err))
+        },
+        syncProducts ({ commit }) {
+            return axios.post(API_URL + 'sync_products', {}, { headers: authHeader() }).then((res) => {
+                if (res.status) {
+                    console.log(res.data)
+                }
+            }).catch(err => console.log(err))
+        },
+        syncProductVariations ({ commit }) {
+            return axios.post(API_URL + 'sync_product_variations', {}, { headers: authHeader() }).then((res) => {
+                if (res.status) {
+                    console.log(res.data)
+                }
+            }).catch((err) => {
+                console.log(err)
+            })
+        },
+        syncOrders ({ commit }) {
+            return axios.post(API_URL + 'sync_orders', {}, { headers: authHeader() }).then((res) => {
+                if (res.status) {
+                    console.log(res.data)
+                }
+            }).catch((err) => {
+                console.log(err)
+            })
         }
     },
     mutations: {

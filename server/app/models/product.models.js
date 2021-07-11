@@ -1,5 +1,9 @@
 module.exports = (sequelize, Sequelize) => {
     const Product = sequelize.define("products", {
+        reference_id: {
+            type: Sequelize.BIGINT(11),
+            unique: true
+        },
         title: {
             type: Sequelize.STRING(200), // VARCHAR(150)
             validate: {
@@ -50,7 +54,7 @@ module.exports = (sequelize, Sequelize) => {
             }
         }
     }, {
-        underscored: true,
+        underscored: true
     })
 
     return Product

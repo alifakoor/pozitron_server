@@ -1,5 +1,9 @@
 module.exports = (sequelize, Sequelize) => {
     const Order = sequelize.define("orders", {
+        reference_id: {
+            type: Sequelize.BIGINT(11),
+            unique: true
+        },
         order_key: {
             type: Sequelize.STRING(10), // VARCHAR(255)
             validate: {
@@ -23,11 +27,14 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.STRING(50),
             validate: {
                 isIn: [[
-                    "تکمیل شده",
-                    "در حال تکمیل",
-                    "لغو شده",
-                    "در انتظار پرداخت",
-                    "در حال ارسال"
+                    "completed",
+                    "processing",
+                    "canceled",
+                    "pending-payment",
+                    "on-hold",
+                    "failed",
+                    "refunded",
+                    "authentication-required"
                 ]]
             }
         },

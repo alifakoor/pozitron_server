@@ -12,7 +12,12 @@ const Op = DB.Sequelize.Op
 const USER = DB.user
 const USER_META = DB.usermeta
 const TERM = DB.term
-const TERM_META = DB.termmeta
+const TERM_RELATION = DB.termRelation
+const PRODUCT = DB.product
+const PRODUCT_META = DB.productmeta
+const ORDER = DB.order
+const ORDER_META = DB.ordermeta
+const ORDER_ITEM = DB.orderItems
 
 const user = {
     getWebsiteData: async (userId) => {
@@ -36,46 +41,351 @@ const user = {
             version: websiteData._api_version
         })
     },
-    createTerm: (term) => {
-        return TERM.create({
-            name: term.name,
-            description: term.description,
-            slug: decodeURIComponent(term.slug),
-            count: term.count,
-            type: 'category',
-            status: 'active'
-        }).then((created_row) => {
-            TERM_META.bulkCreate([
-                {
-                    meta_key: '_wc_id',
-                    meta_value: term.id,
-                    termId: created_row.id
-                },
-                {
-                    meta_key: '_links',
-                    meta_value: JSON.stringify(term._links),
-                    termId: created_row.id
-                }
-            ]).catch((err) => {
-                throw new Error(`Term Meta Not created, ERROR: ${err}`)
-            })
-            return created_row
-        }).then((created_term) => {
-            if (term.parent !== 0) {
-                TERM_META.findOne({
-                    where: { meta_key: '_wc_id', meta_value: term.parent }
-                }).then((founded_parent_row) => {
-                    created_term.update({
-                        parent_id: Number(founded_parent_row.termId)
+    createTerms: (terms, callback) => {
+        terms.map((term) => {
+            TERM.upsert({
+                reference_id: term.id,
+                name: term.name,
+                description: term.description,
+                slug: decodeURIComponent(term.slug),
+                count: term.count,
+                link: JSON.stringify(term._links),
+                type: 'category',
+                status: 'active'
+            },{
+                returning: true
+            }).then((created_term) => {
+                created_term = created_term[0]
+                if (term.parent !== 0) {
+                    TERM.findOne({
+                        where: { reference_id: term.parent }
+                    }).then((founded_parent_row) => {
+                        created_term.update({
+                            parent_id: Number(founded_parent_row.id)
+                        })
+                    }).catch(err => {
+                        throw new Error(`Parent Term Not Found, Error: ${err}`)
                     })
-                }).catch(err => {
-                    throw new Error(`Term Meta for Parent Not Found, Error: ${err}`)
+                }
+            }).catch(err => {
+                throw new Error(`Term Not Created, ERROR: ${err}`)
+            })
+        })
+        callback()
+    },
+    createProducts: (products, callback) => {
+        products.map((product) => {
+            PRODUCT.upsert({
+                reference_id: product.id,
+                title: product.name,
+                description: product.description,
+                slug: product.slug,
+                sku: product.sku,
+                type: product.type,
+                status: product.status
+            },{
+                returning: true
+            }).then((created_row) => {
+                created_row = created_row[0]
+                PRODUCT_META.bulkCreate([
+                    {
+                        meta_key: '_attributes',
+                        meta_value: syncHelpers.syncProductAttributes(product.type, product.attributes),
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_price',
+                        meta_value: product.price,
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_barcode',
+                        meta_value: product.sku,
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_discount',
+                        meta_value: JSON.stringify({
+                            "value":0,
+                            "selected":"cash",
+                            "options":[
+                                {"text":"%","value":"percent"},
+                                {"text":"هـ.ت","value":"cash"}
+                            ]
+                        }),
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_stock',
+                        meta_value: JSON.stringify({
+                            "value":(product.stock_quantity)?0:Number(product.stock_quantity),
+                            "selected":"number",
+                            "options":[
+                                {"text":"∞","value":"infinity"},
+                                {"text":"عـدد","value":"number"}
+                            ]
+                        }),
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_dimensions',
+                        meta_value: JSON.stringify(product.dimensions),
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_weight',
+                        meta_value: product.weight,
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_online_sell',
+                        meta_value: 1,
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_online_price',
+                        meta_value: product.price,
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_online_discount',
+                        meta_value: null,
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_online_stock',
+                        meta_value: (product.stock_quantity)?0:Number(product.stock_quantity),
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_links',
+                        meta_value: JSON.stringify(product._links),
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_images',
+                        meta_value: JSON.stringify(product.images),
+                        productId: created_row.id
+                    }
+                ],{
+                    updateOnDuplicate: ['meta_value']
+                }).then(() => {
+                    console.log(`product meta imported.`)
+                    if (product.categories.length > 0) {
+                        product.categories.map(term => {
+                            TERM.findOne({
+                                where: { reference_id: term.id }
+                            }).then((founded_term) => {
+                                TERM_RELATION.upsert({
+                                    term_order: 1,
+                                    productId: created_row.id,
+                                    termId: founded_term.id
+                                }).then(() => {
+                                    console.log(`create product's category was successful.`)
+                                }).catch((err) => {
+                                    console.log(`create product's category failed with err: ${err}`)
+                                })
+                            }).catch((err) => { console.log(`not found product meta ${err}`) })
+                        })
+                    }
+                }).catch((err) => {
+                    console.log(`create product meta failed with err: ${err}`)
+                })
+            }).catch((err) => {
+                console.log(`create product failed with err: ${err}`)
+            })
+        })
+        callback()
+    },
+    createProductVariations: (product, variations, callback) => {
+        variations.map((variation) => {
+            PRODUCT.upsert({
+                reference_id: variation.id,
+                title: product.title + ' - ' + variation.attributes[0].option,
+                description: variation.description,
+                slug: (variation.slug !== 'undefined') ? variation.slug : variation.sku,
+                sku: variation.sku,
+                type: 'product_variation',
+                status: variation.status,
+                parent_id: product.id
+            }).then((created_row) => {
+                created_row = created_row[0]
+                PRODUCT_META.bulkCreate([
+                    {
+                        meta_key: '_attributes',
+                        meta_value: syncHelpers.syncProductAttributes(variation.type, variation.attributes),
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_price',
+                        meta_value: variation.price,
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_barcode',
+                        meta_value: variation.sku,
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_discount',
+                        meta_value: JSON.stringify({
+                            "value":0,
+                            "selected":"cash",
+                            "options":[
+                                {"text":"%","value":"percent"},
+                                {"text":"هـ.ت","value":"cash"}
+                            ]
+                        }),
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_stock',
+                        meta_value: JSON.stringify({
+                            "value":(variation.stock_quantity)?0:Number(variation.stock_quantity),
+                            "selected":"number",
+                            "options":[
+                                {"text":"∞","value":"infinity"},
+                                {"text":"عـدد","value":"number"}
+                            ]
+                        }),
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_dimensions',
+                        meta_value: JSON.stringify(variation.dimensions),
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_weight',
+                        meta_value: variation.weight,
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_online_sell',
+                        meta_value: 1,
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_online_price',
+                        meta_value: variation.price,
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_online_discount',
+                        meta_value: null,
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_online_stock',
+                        meta_value: (variation.stock_quantity)?0:Number(variation.stock_quantity),
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_links',
+                        meta_value: JSON.stringify(variation._links),
+                        productId: created_row.id
+                    },
+                    {
+                        meta_key: '_images',
+                        meta_value: JSON.stringify(variation.images),
+                        productId: created_row.id
+                    }
+                ],{
+                    updateOnDuplicate: ['meta_value']
+                }).then(() => {
+                    console.log(`product meta imported.`)
+                }).catch((err) => {
+                    console.log(`create product meta failed with err: ${err}`)
+                })
+            }).catch((err) => {
+                console.log(`create product failed with err: ${err}`)
+            })
+
+        })
+        callback()
+    },
+    createOrders: (orders, callback) => {
+        orders.map((order) => {
+            if (order.status === 'completed') {
+                ORDER.upsert({
+                    reference_id: order.id,
+                    order_key: order.order_key,
+                    total_price: order.total,
+                    type: 'type_1',
+                    status: order.status
+                },{
+                    returning: true
+                }).then((created_row) => {
+                    created_row = created_row[0]
+                    ORDER_META.bulkCreate([
+                        {
+                            meta_key: '_addition',
+                            meta_value: 0,
+                            productId: created_row.id
+                        },
+                        {
+                            meta_key: '_discount',
+                            meta_value: Number(order.discount_total),
+                            productId: created_row.id
+                        },
+                        {
+                            meta_key: '_shipping',
+                            meta_value: Number(order.shipping_total),
+                            productId: created_row.id
+                        },
+                        {
+                            meta_key: '_delivery',
+                            meta_value: null,
+                            productId: created_row.id
+                        }
+                    ],{
+                        updateOnDuplicate: ['meta_value']
+                    }).then(() => {
+                        console.log(`order meta imported.`)
+                        if (order.line_items.length > 0) {
+                            order.line_items.map(term => {
+                                ORDER_ITEM.findOne({
+                                    where: { reference_id: term.id }
+                                }).then((founded_term) => {
+                                    TERM_RELATION.upsert({
+                                        term_order: 1,
+                                        productId: created_row.id,
+                                        termId: founded_term.id
+                                    }).then(() => {
+                                        console.log(`create product's category was successful.`)
+                                    }).catch((err) => {
+                                        console.log(`create product's category failed with err: ${err}`)
+                                    })
+                                }).catch((err) => { console.log(`not found product meta ${err}`) })
+                            })
+                        }
+                    }).catch((err) => {
+                        console.log(`create order meta failed with err: ${err}`)
+                    })
+                }).catch((err) => {
+                    console.log(`create order failed with err: ${err}`)
                 })
             }
-            return created_term
-        }).catch(err => {
-            throw new Error(`Term Not Created, ERROR: ${err}`)
         })
+        callback()
+    }
+}
+
+const syncHelpers = {
+    syncProductAttributes: (type, attributes) => {
+        if (type === 'variable') {
+            let attr = attributes[0]
+            let response = {
+                "name": attr.name,
+                "value": attr.name,
+                "position": 0,
+                "visible": true,
+                "variation": true,
+                "options": attr.option
+            }
+            return JSON.stringify(response)
+        }
+        return null
     }
 }
 
@@ -118,25 +428,19 @@ exports.setUserWebsiteData = (req, res) => {
 }
 
 exports.syncCategories = async (req, res) => {
-
     const website = await user.getWebsiteData(req.userId)
     if (website) {
         const api = user.createWcApi(website)
-        let page, total_page
+        let page, total_page, api_result
         page = total_page = 0
+        api_result = []
         do {
-            await api.get("products/categories", { page: ++page, per_page: 2, orderby: 'id' })
+            await api.get("products/categories", { page: ++page, per_page: 100, orderby: 'id' })
                 .then(response => {
                     total_page = Number(response.headers['x-wp-totalpages'])
-                    response.data.map(async (category) => {
-                        await user.createTerm(category)
+                    response.data.map(async (term) => {
+                        api_result.push(term)
                     })
-                    return true
-                })
-                .then(response => {
-                    if (response) {
-                        res.status(200).json({ message: 'Categories Sync was Successful.'})
-                    }
                 })
                 .catch((err) => {
                     console.log("Response Status:", err.response.status)
@@ -146,97 +450,95 @@ exports.syncCategories = async (req, res) => {
                 .finally(() => {})
         } while (page < total_page)
 
-    }
-
-    /*
-    const api = new WC({
-        url: "https://onlinenow.ir/sandbox-onlinenow-pos",
-        consumerKey: 'ck_4cc138d1e8246431b4f35ff838c19470754147de',
-        consumerSecret: 'cs_f81e5b2fbf4c715f4898799a63d96c84b6326c81',
-        version: "wc/v3"
-    })
-
-    // list of all categories
-    let result = []
-    let page = 0
-    let total_page = 0
-
-    // get all categories, there is a paginitaion in wc api
-    // so i use a doWhile loop for fetch all data in one array
-    do  {
-        await api.get("products/categories", { page: ++page, per_page: 20, orderby: 'id' }).then(response => {
-            total_page = parseInt(response.headers['x-wp-totalpages'])
-            for (let i = 0; i < response.data.length; i++) {
-                response.data[i].slug = decodeURIComponent(response.data[i].slug)
-            }
-            result = result.concat(response.data)
-        }).catch((err) => {
-            console.log("Response Status:", err.response.status)
-            console.log("Response Headers:", err.response.headers)
-            console.log("Response Data:", err.response.data)
-        }).finally(() => {})
-    } while (page < total_page)
-
-    // create categories in database and update parents
-    result.forEach(data => {
-        // import categories
-        Term.create({
-            name: data.name,
-            description: data.description,
-            slug: data.slug,
-            count: data.count,
-            type: 'category',
-            status: 'active'
-        }).then((importResult) => {
-            // import meta data of categories
-            TermMeta.bulkCreate([
-                {
-                    meta_key: '_wc_id',
-                    meta_value: data.id,
-                    termId: importResult.dataValues.id
-                },
-                {
-                    meta_key: '_wc_links',
-                    meta_value: JSON.stringify(data._links),
-                    termId: importResult.dataValues.id
-                }
-            ]).then(() => {
-                // update parent, this mothafucka is complex
-                if (data.parent !== 0) {
-                    TermMeta.findOne({
-                        where: { meta_key: '_wc_id', meta_value: data.parent }
-                    }).then((onp_category_parent) => {
-                        TermMeta.findOne({
-                            where: { meta_key: '_wc_id', meta_value: data.id }
-                        }).then((onp_category) => {
-                            Term.findByPk(onp_category.termId).then((category) => {
-                                category.update({
-                                    parent_id: onp_category_parent.termId
-                                })
-                            }).catch((err) => { console.log(`not found category: ${err}`) })
-                        }).catch((err) => { console.log(`not found termmeta: ${err}`) })
-                    }).catch((err) => { console.log(`not found termmeta parent ${err}`) })
-                }
-            }).catch((err) => {
-                console.log(`create termmeta failed with err: ${err}`)
-            })
-        }).catch((err) => {
-            console.log(`create term failed with err: ${err}`)
+        await user.createTerms(api_result, () => {
+            res.status(200).json({ message: 'دسته بندی ها با موفقیت همگام سازی شده اند.'})
         })
-    })
-
-    res.status(200).send({
-        message: 'sync was successful. enjoy!'
-    })
-     */
+    }
 }
 
-exports.syncProducts = (req, res) => {
-
+exports.syncProducts = async (req, res) => {
+    const website = await user.getWebsiteData(req.userId)
+    if (website) {
+        const api = user.createWcApi(website)
+        let page, total_page, api_result
+        page = total_page = 0
+        api_result = []
+        do  {
+            await api.get("products", { page: ++page, per_page: 100, orderby: 'id' }).then(response => {
+                total_page = parseInt(response.headers['x-wp-totalpages'])
+                response.data.map(async (product) => {
+                    api_result.push(product)
+                })
+            }).catch((err) => {
+                console.log("Response Status:", err.response.status)
+                console.log("Response Headers:", err.response.headers)
+                console.log("Response Data:", err.response.data)
+            }).finally(() => {})
+        } while (page < total_page)
+        await user.createProducts(api_result, () => {
+            res.status(200).json({ message: 'محصولات با موفقیت همگام سازی شده اند.'})
+        })
+    }
 }
 
-exports.syncVariableProducts = (req, res) => {
+exports.syncProductVariations = async (req, res) => {
+    const website = await user.getWebsiteData(req.userId)
+    if (website) {
+        const api = user.createWcApi(website)
+        let variable_products = await PRODUCT.findAll({
+            where: {
+                type: 'variable'
+            }
+        }) | []
+        if (variable_products.length > 0) {
+            variable_products.map(async (variable) => {
+                let api_result = []
+                let page = 0
+                let total_page = 0
+                do  {
+                    await api.get("products/" + variable.reference_id + "/variations", { page: ++page, per_page: 100, orderby: 'id' })
+                    .then(response => {
+                        total_page = parseInt(response.headers['x-wp-totalpages'])
+                        response.data.map(async (product) => {
+                            api_result.push(product)
+                        })
+                    }).catch((err) => {
+                        console.log("Response Status:", err.response.status)
+                        console.log("Response Headers:", err.response.headers)
+                        console.log("Response Data:", err.response.data)
+                    }).finally(() => {})
+                } while (page < total_page)
+                await user.createProductVariations(variable, api_result, () => {
+                    res.status(200).json({ message: 'محصولات متغیر با موفقیت همگام سازی شده اند.'})
+                })
+            })
+        }
+    }
+}
 
+exports.syncOrders = async (req, res) => {
+    const website = await user.getWebsiteData(req.userId)
+    if (website) {
+        const api = user.createWcApi(website)
+        let page, total_page, api_result
+        page = total_page = 0
+        api_result = []
+        do  {
+            await api.get("orders", { page: ++page, per_page: 100, orderby: 'id' }).then(response => {
+                total_page = parseInt(response.headers['x-wp-totalpages'])
+                response.data.map(async (order) => {
+                    api_result.push(order)
+                })
+            }).catch((err) => {
+                console.log("Response Status:", err.response.status)
+                console.log("Response Headers:", err.response.headers)
+                console.log("Response Data:", err.response.data)
+            }).finally(() => {})
+        } while (page < total_page)
+        await user.createOrders(api_result, () => {
+            res.status(200).json({ message: 'سفارشات با موفقیت همگام سازی شده اند.'})
+        })
+    }
 }
 
 exports.userBoard = (req, res) => {

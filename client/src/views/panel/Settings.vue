@@ -90,51 +90,18 @@
             <b-col>
                 <b-overlay :show="loading">
                     <b-card
-                        border-variant="sync_products"
-                        header="همگام‌سازی محصولات"
-                        header-border-variant="sync_products"
-                        align="center"
-                        :aria-hidden="loading ? true : null"
-                    >
-                        <b-row>
-                            <b-col>
-                                <b-button variant="primary" @click="syncProducts">
-                                    شروع کن
-                                </b-button>
-                            </b-col>
-                        </b-row>
-                    </b-card>
-                </b-overlay>
-            </b-col>
-            <b-col>
-                <b-overlay :show="loading">
-                    <b-card
-                        border-variant="sync_categories"
-                        header="همگام‌سازی دسته‌بندی‌ها"
-                        header-border-variant="sync_categories"
+                        border-variant="sync"
+                        header="همگام‌سازی"
+                        header-border-variant="sync"
                         align="center"
                     >
                         <b-row>
                             <b-col>
-                                <b-button variant="primary" @click="syncCategories">شروع کن</b-button>
+                                <b-button variant="primary" @click="sync">شروع کن</b-button>
                             </b-col>
                         </b-row>
                     </b-card>
                 </b-overlay>
-            </b-col>
-            <b-col>
-                <b-card
-                    border-variant="properties"
-                    header="همگام‌سازی سفارشات"
-                    header-border-variant="properties"
-                    align="center"
-                >
-                    <b-row>
-                        <b-col>
-                            <b-button variant="primary">شروع کن</b-button>
-                        </b-col>
-                    </b-row>
-                </b-card>
             </b-col>
         </b-row>
     </div>
@@ -156,14 +123,11 @@ export default {
         saveUserWebsiteData () {
             this.$store.dispatch('settings/setUserWebsiteData', this.userWebsite)
         },
-        syncVariableProducts () {
-            this.$store.dispatch('settings/syncVariableProducts')
-        },
-        syncProducts () {
-            this.$store.dispatch('settings/syncProducts')
-        },
-        syncCategories () {
-            this.$store.dispatch('settings/syncCategories')
+        async sync () {
+            await this.$store.dispatch('settings/syncCategories')
+            await this.$store.dispatch('settings/syncProducts')
+            await this.$store.dispatch('settings/syncProductVariations')
+            await this.$store.dispatch('settings/syncOrders')
         }
     },
     computed: {

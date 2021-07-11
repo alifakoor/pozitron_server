@@ -1,5 +1,9 @@
 module.exports = (sequelize, Sequelize) => {
-    const Term = sequelize.define("terms", {
+    return sequelize.define("terms", {
+        reference_id: {
+            type: Sequelize.BIGINT(11),
+            unique: true
+        },
         name: {
             type: Sequelize.STRING(200), // VARCHAR(200)
             validate: {
@@ -37,16 +41,11 @@ module.exports = (sequelize, Sequelize) => {
                     "deactivate"
                 ]]
             }
+        },
+        link: {
+            type: Sequelize.TEXT
         }
     }, {
-        underscored: true,
-        indexes: [
-            {
-                unique: true,
-                fields: ['slug', 'type']
-            }
-        ]
+        underscored: true
     })
-
-    return Term
 }

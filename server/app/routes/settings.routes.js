@@ -15,4 +15,6 @@ module.exports = function(app) {
 	app.post("/api/settings/set_user_website", [ authJWT.verifyToken ], controller.setUserWebsiteData)
 	app.post("/api/settings/sync_categories", [ authJWT.verifyToken ], controller.syncCategories)
 	app.post("/api/settings/sync_products", [ authJWT.verifyToken ], controller.syncProducts)
+	app.post("/api/settings/sync_product_variations", [ authJWT.verifyToken ], controller.syncProductVariations)
+	app.post("/api/settings/sync_orders", [ authJWT.verifyToken ], controller.syncOrders)
 }

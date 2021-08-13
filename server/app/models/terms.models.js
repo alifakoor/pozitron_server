@@ -46,6 +46,12 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.TEXT
         }
     }, {
-        underscored: true
+        underscored: true,
+        indexes: [
+            {
+                unique: true,
+                fields: ['slug', 'business_id']
+            }
+        ]
     })
 }

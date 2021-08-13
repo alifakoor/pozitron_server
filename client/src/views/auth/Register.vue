@@ -80,7 +80,8 @@ export default {
                 username: '',
                 phone: '',
                 password: '',
-                confirm_password: ''
+                confirm_password: '',
+                subdomain: ''
             },
             message: '',
             successful: false,
@@ -110,6 +111,10 @@ export default {
         if (this.loggedIn) {
             this.$router.push('/panel')
         }
+        // let hostname = window.location.hostname
+        // hostname = hostname.split('.')
+        // this.form.subdomain = hostname[0]
+        this.form.subdomain = 'pozitron'
     },
     methods: {
         onKeyupUsername () {

@@ -9,8 +9,8 @@ const _ = require('lodash')
 const db = require("../models")
 // const config = require("../config/auth.config.js")
 const Op = db.Sequelize.Op
-const Product = db.product
-const ProductMeta = db.productmeta
+const PRODUCT = db.product
+const PRODUCTMETA = db.productmeta
 const Term = db.term
 const TermMeta = db.termmeta
 const TermRelation = db.termRelation
@@ -114,20 +114,21 @@ async function createTags (tags) {
     return ids
 }
 
-function manageVariableProductVariations (variable, variableId) {
+function manageVariableProductVariations (variable, variableId, businessId) {
     variable.variations.items.forEach(variation => {
-        Product.upsert({
+        PRODUCT.upsert({
             title: variable.name + ' - ' + handleItemVariationTitle(variation),
             slug: variation.sku,
-            sku: variation.sku,
+            barcode: variation.sku,
             type: 'product_variation',
             status: 'publish',
-            parent_id: variableId
+            parent_id: variableId,
+            business_id: businessId
         }).then(
             (importedChild) => {
                 importedChild = importedChild[0]
                 console.log(`create product's variations was successful.`)
-                return ProductMeta.bulkCreate([
+                return PRODUCTMETA.bulkCreate([
                     {
                         meta_key: '_attributes',
                         meta_value: JSON.stringify({ name: variable.attributes.name, option: variation.selected, text: getNameOfAttribute(variation.options, variation.selected)}),
@@ -202,21 +203,22 @@ function manageVariableProductVariations (variable, variableId) {
     })
 }
 
-function createSimpleProduct(product) {
-    return Product.upsert({
+function createSimpleProduct(product, business) {
+    return PRODUCT.upsert({
         title: product.name,
         description: product.description,
         slug: product.sku,
-        sku: product.sku,
+        barcode: product.sku,
         type: 'simple',
-        status: 'publish'
+        status: 'publish',
+        business_id: business
     },{
         returning: true
     }).then(
         (importResult) => {
             importResult = importResult[0]
             // import meta data of products
-            return ProductMeta.bulkCreate([
+            return PRODUCTMETA.bulkCreate([
                 {
                     meta_key: '_attributes',
                     meta_value: '[]',
@@ -225,11 +227,6 @@ function createSimpleProduct(product) {
                 {
                     meta_key: '_price',
                     meta_value: product.price,
-                    productId: importResult.dataValues.id
-                },
-                {
-                    meta_key: '_barcode',
-                    meta_value: product.barcode,
                     productId: importResult.dataValues.id
                 },
                 {
@@ -303,19 +300,20 @@ function createSimpleProduct(product) {
     ).catch(err => { return `create product failed, ${err}` })
 }
 
-function createVariableProduct(product) {
+function createVariableProduct(product, business) {
     return Product.upsert({
         title: product.name,
         description: product.description,
         slug: product.sku,
-        sku: product.sku,
+        barcode: product.sku,
         type: 'variable',
-        status: 'publish'
+        status: 'publish',
+        businessId: req.business
     }).then(
         (importResult) => {
             importResult = importResult[0]
             // import meta data of products
-            ProductMeta.bulkCreate([
+            PRODUCTMETA.bulkCreate([
                 {
                     meta_key: '_attributes',
                     meta_value: JSON.stringify(product.attributes),
@@ -350,7 +348,7 @@ function createVariableProduct(product) {
 
             await manageProductCategories(importResult.dataValues.id, product.categories)
 
-            await manageVariableProductVariations(product, importResult.dataValues.id)
+            await manageVariableProductVariations(product, importResult.dataValues.id, business)
 
             return importResult
         }
@@ -362,7 +360,7 @@ function editVariation(product) {
     return Product.upsert({
         title: product.name,
         slug: product.sku,
-        sku: product.sku,
+        barcode: product.sku,
         type: 'product_variation',
         status: 'publish'
     },{
@@ -371,7 +369,7 @@ function editVariation(product) {
         (importResult) => {
             importResult = importResult[0]
             // import meta data of products
-            return ProductMeta.bulkCreate([
+            return PRODUCTMETA.bulkCreate([
                 {
                     meta_key: '_price',
                     meta_value: product.price,
@@ -444,7 +442,7 @@ function editVariation(product) {
 
 exports.products = (req, res) => {
     // list of all products
-    Product.findAll({
+    PRODUCT.findAll({
         where: {
             type: {
                 [Op.in]: ['simple', 'variable']
@@ -452,12 +450,12 @@ exports.products = (req, res) => {
         },
         include: [
             {
-                model: db.product,
-                as: 'Children',
-                include: [{ model: db.productmeta }]
+                model: PRODUCT,
+                as: 'children',
+                include: [{ model: PRODUCTMETA }]
             },
             {
-                model: db.productmeta,
+                model: PRODUCTMETA,
                 attributes: ['meta_key', 'meta_value']
             },
             {
@@ -468,16 +466,16 @@ exports.products = (req, res) => {
         ],
         order: [
             [
-                { model: Product, as: 'Children' },
-                'sku',
+                { model: PRODUCT, as: 'children' },
+                'id',
                 'ASC'
             ]
         ]
     }).then(products => {
         products.forEach(product => {
             product.dataValues.product_meta = _.chain(product.product_meta).keyBy('meta_key').mapValues('meta_value').value()
-            if (product.Children.length) {
-                product.Children.forEach(child => {
+            if (product.children.length) {
+                product.children.forEach(child => {
                     child.dataValues.product_meta = _.chain(child.product_meta).keyBy('meta_key').mapValues('meta_value').value()
                 })
             }
@@ -524,7 +522,7 @@ exports.syncProducts = async (req, res) => {
             status: data.status
         }).then((importResult) => {
             // import meta data of products
-            ProductMeta.bulkCreate([
+            PRODUCTMETA.bulkCreate([
                 {
                     meta_key: '_wc_id',
                     meta_value: data.id,
@@ -616,7 +614,7 @@ exports.syncVariableProducts = (req, res) => {
         where: {
             type: 'variable'
         },
-        include: ProductMeta
+        include: PRODUCTMETA
     }).then((all) => {
         all.forEach(async (product) => {
             let meta_data = product.product_meta.find((meta) => {
@@ -661,7 +659,7 @@ exports.syncVariableProducts = (req, res) => {
                 }).then((importResult) => {
                     // import meta data of products
                     if (importResult.dataValues.id)
-                    ProductMeta.bulkCreate([
+                    PRODUCTMETA.bulkCreate([
                         {
                             meta_key: '_wc_id',
                             meta_value: data.id,
@@ -736,7 +734,7 @@ exports.syncVariableProducts = (req, res) => {
 
 exports.getAllProductsForCart = async (req, res) => {
     // get productmeta's stock > 0
-    let product_meta = await ProductMeta.findAll({
+    let product_meta = await PRODUCTMETA.findAll({
         attributes: ['product_id'],
         where: {
             meta_key: '_stock',
@@ -759,7 +757,7 @@ exports.getAllProductsForCart = async (req, res) => {
         },
         include: [
             {
-                model: db.productmeta
+                model: PRODUCTMETA
             },
             {
                 model: db.term
@@ -780,7 +778,7 @@ exports.manageStock = (req, res) => {
         },
         include: [
             {
-                model: db.productmeta,
+                model: PRODUCTMETA,
                 attributes: ['meta_key', 'meta_value'],
                 as: 'metadata',
                 where: {
@@ -805,14 +803,14 @@ exports.uploadImage = (req, res) => {
 exports.createNewProduct = async (req, res) => {
     if (req.body.type === 'simple' || req.body.type === 'editSimple') {
         try {
-            const product = await createSimpleProduct(req.body.simple)
+            const product = await createSimpleProduct(req.body.simple, req.business)
             Product.findOne({
                 where: {
                     id: product.id
                 },
                 include: [
                     {
-                        model: ProductMeta,
+                        model: PRODUCTMETA,
                         attributes: ['meta_key', 'meta_value']
                     },
                     {
@@ -834,7 +832,7 @@ exports.createNewProduct = async (req, res) => {
         }
     } else if (req.body.type === 'variable' || req.body.type === 'editVariable') {
         try {
-            const product = await createVariableProduct(req.body.variable)
+            const product = await createVariableProduct(req.body.variable, req.business)
 
 
             res.status(200).send({
@@ -857,7 +855,7 @@ exports.createNewProduct = async (req, res) => {
                 },
                 include: [
                     {
-                        model: ProductMeta,
+                        model: PRODUCTMETA,
                         attributes: ['meta_key', 'meta_value']
                     },
                     {
@@ -887,18 +885,18 @@ exports.createNewProduct = async (req, res) => {
 }
 
 exports.getOneProduct = (req, res) => {
-    Product.findOne({
+    PRODUCT.findOne({
         where: {
             id: req.body.id
         },
         include: [
             {
-                model: db.product,
-                as: 'Children',
-                include: [{ model: db.productmeta }]
+                model: PRODUCT,
+                as: 'children',
+                include: [{ model: PRODUCTMETA }]
             },
             {
-                model: ProductMeta,
+                model: PRODUCTMETA,
                 attributes: ['meta_key', 'meta_value']
             },
             {
@@ -908,7 +906,7 @@ exports.getOneProduct = (req, res) => {
         ],
         order: [
             [
-                { model: Product, as: 'Children' },
+                { model: PRODUCT, as: 'children' },
                 'sku',
                 'ASC'
             ]
@@ -916,8 +914,8 @@ exports.getOneProduct = (req, res) => {
     })
         .then(founded => {
             founded.dataValues.product_meta = _.chain(founded.product_meta).keyBy('meta_key').mapValues('meta_value').value()
-            if (founded.Children.length) {
-                founded.Children.forEach(child => {
+            if (founded.children.length) {
+                founded.children.forEach(child => {
                     console.log(child.dataValues.product_meta)
                     child.dataValues.product_meta = _.chain(child.product_meta).keyBy('meta_key').mapValues('meta_value').value()
                 })
@@ -979,7 +977,7 @@ exports.deleteProductVariation = (req, res) => {
 
 exports.manageOnlineSell = async (req, res) => {
     try {
-        ProductMeta.update({
+        PRODUCTMETA.update({
             meta_value: req.body.value
         }, {
             where: {

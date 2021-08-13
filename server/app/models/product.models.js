@@ -19,10 +19,9 @@ module.exports = (sequelize, Sequelize) => {
                 len: [2, 200]
             }
         },
-        sku: {
+        barcode: {
             type: Sequelize.STRING(200),
             allowNull: false,
-            unique: true,
             validate: {
                 is: ["^[a-zA-Z0-9_]+$", 'i'],
                 len: [1, 200]
@@ -54,7 +53,13 @@ module.exports = (sequelize, Sequelize) => {
             }
         }
     }, {
-        underscored: true
+        underscored: true,
+        indexes: [
+            {
+                unique: true,
+                fields: ['barcode', 'business_id']
+            }
+        ]
     })
 
     return Product

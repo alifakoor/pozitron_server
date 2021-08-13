@@ -25,6 +25,7 @@ db.sequelize = sequelize
 // models
 db.user          = require("./user.models.js")(sequelize, Sequelize)
 db.usermeta      = require("./usermeta.models.js")(sequelize, Sequelize)
+db.business      = require("./business.models.js")(sequelize, Sequelize)
 db.customer      = require("./customer.models.js")(sequelize, Sequelize)
 db.customermeta  = require("./customermeta.models.js")(sequelize, Sequelize)
 db.product       = require("./product.models.js")(sequelize, Sequelize)
@@ -47,7 +48,7 @@ db.customermeta.belongsTo(db.customer)
 
 // association product & productmeta models
 db.product.hasMany(db.product, {
-    as: 'Children',
+    as: 'children',
     foreignKey: 'parent_id'
 })
 db.product.hasMany(db.productmeta)
@@ -55,7 +56,7 @@ db.productmeta.belongsTo(db.product)
 
 // association term & termmeta models
 db.term.hasMany(db.term, {
-    as: 'Children',
+    as: 'children',
     foreignKey: 'parent_id'
 })
 db.term.hasMany(db.termmeta)
@@ -76,6 +77,24 @@ db.customer.belongsTo(db.user)
 // association users & orders models
 db.user.hasMany(db.order)
 db.order.belongsTo(db.user)
+
+// association users & business models
+db.business.hasMany(db.user, {
+    foreignKey: 'business_id'
+})
+db.user.belongsTo(db.business)
+
+// association business & products models
+db.business.hasMany(db.product, {
+    foreignKey: 'business_id'
+})
+db.product.belongsTo(db.business)
+
+// association business & terms models
+db.business.hasMany(db.term, {
+    foreignKey: 'business_id'
+})
+db.term.belongsTo(db.business)
 
 // association customers & orders models
 db.customer.hasMany(db.order)

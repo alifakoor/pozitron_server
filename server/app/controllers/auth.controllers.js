@@ -1,26 +1,34 @@
 const db = require("../models")
 const config = require("../config/auth.config.js")
-const User = db.user
+const USER = db.user
+const BUSINESS = db.business
 
-const Op = db.Sequelize.Op
-
-var jwt = require("jsonwebtoken")
-var bcrypt = require("bcryptjs")
+let jwt = require("jsonwebtoken")
+let bcrypt = require("bcryptjs")
 
 exports.signup = (req, res) => {
     // save user to database
-    User.create({
-        username: req.body.username,
-        password: bcrypt.hashSync(req.body.password, 8),
-        fullname: req.body.fullname,
-        email: req.body.email,
-        phone: req.body.phone,
-        kind: "user",
-        status: "active"
-    }).then(() => {
-        res.status(200).send({
-            success: true,
-            message: "ثبت نام با موفقیت انجام شد."
+    BUSINESS.findOne({
+        where: {
+            subdomain: req.body.subdomain
+        }
+    }).then(business => {
+        USER.create({
+            username: req.body.username,
+            password: bcrypt.hashSync(req.body.password, 8),
+            fullname: req.body.fullname,
+            email: req.body.email,
+            phone: req.body.phone,
+            kind: "user",
+            status: "active",
+            businessId: business.id
+        }).then(() => {
+            res.status(200).send({
+                success: true,
+                message: "ثبت نام با موفقیت انجام شد."
+            })
+        }).catch(err => {
+            res.status(500).send({ message: err.message })
         })
     }).catch(err => {
         res.status(500).send({ message: err.message })
@@ -28,7 +36,7 @@ exports.signup = (req, res) => {
 }
 
 exports.signin = (req, res) => {
-    User.findOne({
+    USER.findOne({
         where: {
             username: req.body.username
         }
@@ -49,7 +57,7 @@ exports.signin = (req, res) => {
                 message: "Invalid Password."
             })
 
-        let token = jwt.sign({ id: user.id }, config.secret, {
+        let token = jwt.sign({ id: user.id, business_id: user.business_id }, config.secret, {
             expiresIn: 86400 // 24 hours
         })
 
@@ -61,6 +69,7 @@ exports.signin = (req, res) => {
             kind: user.kind,
             status: user.status,
             created_at: user.createdAt,
+            business_id: user.business_id,
             token: token
         })
 

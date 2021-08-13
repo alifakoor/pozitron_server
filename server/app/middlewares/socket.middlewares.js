@@ -4,7 +4,7 @@ const eventsController = require("../controllers/events.controllers")
 class socketMiddlewares {
     #OPTIONS = {
         cors: {
-            origin: 'http://localhost:8080'
+            origin: ["http://pozitron.local", "http://localhost:8080"]
         }
     }
     io = null

@@ -17,6 +17,7 @@ verifyToken = (req, res, next) => {
                 message: "Unauthorized!"
             })
         req.userId = decoded.id
+        req.business = decoded.business_id
         next()
     })
 }
@@ -31,7 +32,7 @@ isAdmin = (req, res, next) => {
         res.status(403).send({
             message: "Require Admin Kind!"
         })
-        return
+        next()
     })
 }
 

@@ -8,7 +8,8 @@ class AuthService {
         return axios
             .post(API_URL + 'signin', {
                 username: user.username,
-                password: user.password
+                password: user.password,
+                subdomain: user.subdomain
             })
             .then(response => {
                 if (response.status === 200 && response.data.token) {
@@ -27,7 +28,8 @@ class AuthService {
         return axios.post(API_URL + 'signup', {
             username: user.username,
             phone: user.phone,
-            password: user.password
+            password: user.password,
+            subdomain: user.subdomain
         }).then(response => {
             return response
         }).catch(err => {

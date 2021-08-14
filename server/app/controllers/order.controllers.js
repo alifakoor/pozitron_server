@@ -9,15 +9,15 @@ const _ = require('lodash')
 /**
  * Models
  */
-const Op = DB.Sequelize.Op
-const Product = DB.product
-const ProductMeta = DB.productmeta
-const Order = DB.order
-const OrderMeta = DB.ordermeta
-const OrderItems = DB.orderItems
+const OP = DB.Sequelize.Op
+const PRODUCT = DB.product
+const PRODUCT_META = DB.productmeta
+const ORDER = DB.order
+const ORDER_META = DB.ordermeta
+const ORDER_ITEMS = DB.orderItems
 const OrderItemMeta = DB.orderItemmeta
-const Customer = DB.customer
-const CustomerMeta = DB.customermeta
+const CUSTOMER = DB.customer
+const CUSTOMER_META = DB.customermeta
 
 /**
  * configurations
@@ -53,14 +53,14 @@ exports.orders = (req, res) => {
 }
 
 exports.saveCart = (req, res) => {
-    Order.create({
+    ORDER.create({
         order_key: `_onp_${req.userId}`,
         total_price: req.body.totalPrice,
         type: 'type_1',
-        status: 'در حال تکمیل',
+        status: 'on-hold',
         userId: req.userId
     }).then((order) => {
-        OrderMeta.bulkCreate([
+        ORDER_META.bulkCreate([
             {
                 meta_key: '_onp_customer_name',
                 meta_value: req.body.customer.name,
@@ -78,11 +78,11 @@ exports.saveCart = (req, res) => {
             }
         ]).then((ordermeta) => {
             req.body.items.forEach((item) => {
-                ProductMeta.findAll({
+                PRODUCT_META.findAll({
                     where: {
                         productId: item.id,
                         meta_key: {
-                            [Op.or]: ['_wc_stock_quantity', '_wc_id', '_wc_price']
+                            [OP.or]: ['_wc_stock_quantity', '_wc_id', '_wc_price']
                         }
                     }
                 }).then((product) => {
@@ -93,7 +93,7 @@ exports.saveCart = (req, res) => {
                     WC_API.put("products/"+wc_id, {
                         stock_quantity: stock - item.count
                     }).then(() => {
-                        ProductMeta.update({
+                        PRODUCT_META.update({
                             meta_value: (stock - item.count).toString()
                         },{
                             where: {
@@ -101,11 +101,11 @@ exports.saveCart = (req, res) => {
                                 meta_key: '_wc_stock_quantity'
                             }
                         }).then((productmeta) => {
-                            OrderItems.create({
+                            ORDER_ITEMS.create({
                                 price: wc_price,
                                 count: item.count,
                                 type: 'type_1',
-                                status: 'فعال',
+                                status: 'active',
                                 orderId: order.dataValues.id,
                                 productId: item.id
                             }).then((orderitem) => {
@@ -137,22 +137,22 @@ exports.saveCart = (req, res) => {
 }
 
 exports.getPreviousOrders = (req, res) => {
-    Order.findAll({
+    ORDER.findAll({
         include: [{
-            model: OrderMeta
+            model: ORDER_META
         },{
-            model: Product,
+            model: PRODUCT,
             as: 'items',
-            include: [ { model: ProductMeta } ]
+            include: [ { model: PRODUCT_META } ]
         },{
-            model: Customer,
+            model: CUSTOMER,
             include: [{
-                model: CustomerMeta
+                model: CUSTOMER_META
             }]
         }],
         where: {
             userId: req.userId,
-            status: 'در حال تکمیل'
+            status: 'on-hold'
         }
     }).then(orders => {
         orders.forEach(order => {
@@ -167,8 +167,8 @@ exports.getPreviousOrders = (req, res) => {
 }
 
 exports.completeCart = (req, res) => {
-    Order.update({
-        status: 'تکمیل شده'
+    ORDER.update({
+        status: 'completed'
     },{
         where: {
             id: req.body.order_id
@@ -181,7 +181,7 @@ exports.completeCart = (req, res) => {
 }
 
 exports.getCustomer = async (req, res) => {
-    await Customer.findOrCreate({
+    await CUSTOMER.findOrCreate({
         where: {
             phone: req.body.phone
         },
@@ -190,14 +190,14 @@ exports.getCustomer = async (req, res) => {
         },
         include: [
             {
-                model: CustomerMeta,
+                model: CUSTOMER_META,
                 as: 'customer_meta'
             }
         ]
     }).then(created_customer => {
         let customer = created_customer[0]
         if (customer._options.isNewRecord) {
-            CustomerMeta.bulkCreate([
+            CUSTOMER_META.bulkCreate([
                 {
                     meta_key: '_email',
                     meta_value: null,
@@ -242,7 +242,7 @@ exports.getCustomer = async (req, res) => {
 }
 
 exports.createOrder = async (req, res) => {
-    Customer.update({
+    CUSTOMER.update({
         fullname: req.body.fullname,
         phone: req.body.phone
     },{
@@ -250,7 +250,7 @@ exports.createOrder = async (req, res) => {
             id: req.body.id
         }
     }).then(updated_customer => {
-        CustomerMeta.bulkCreate([
+        CUSTOMER_META.bulkCreate([
             {
                 meta_key: '_email',
                 meta_value: req.body.customer_meta._email,
@@ -270,15 +270,15 @@ exports.createOrder = async (req, res) => {
             updateOnDuplicate: ['meta_value']
         }).then().catch(err => { WINSTON.log('error', `Customer Meta Not Updated: ${err}`) })
     }).then(() => {
-        Order.create({
-            order_key: '_onp_' + req.body.id + '_' + req.body.userId,
+        ORDER.create({
+            order_key: '_zi_' + req.body.id + '_' + req.body.userId,
             total_price: 0,
             type: 'type_1',
-            status: 'در حال تکمیل',
+            status: 'on-hold',
             userId: req.body.userId,
             customerId: req.body.id
         }).then(created_order => {
-            OrderMeta.bulkCreate([
+            ORDER_META.bulkCreate([
                 {
                     meta_key: '_addition',
                     meta_value: 0,
@@ -314,7 +314,7 @@ exports.createOrder = async (req, res) => {
 }
 
 exports.deleteOrder = async (req, res) => {
-    const destroyOrder = await Order.destroy({
+    const destroyOrder = await ORDER.destroy({
         where: {
             id: req.body.id
         }
@@ -333,7 +333,7 @@ exports.deleteOrder = async (req, res) => {
 }
 
 exports.deleteItemFromOrder = async (req, res) => {
-    await OrderItems.destroy({
+    await ORDER_ITEMS.destroy({
         where: {
             id: req.body.id
         }
@@ -349,12 +349,12 @@ exports.deleteItemFromOrder = async (req, res) => {
 
 exports.saveOrder = async (req, res) => {
     req.body.items.forEach(async (item) => {
-        const orderItem = await OrderItems.create({
+        const orderItem = await ORDER_ITEMS.create({
             price: item.price,
             count: item.stock,
             discount: JSON.stringify(item.discount),
             type: 'type_1',
-            status: 'فعال',
+            status: 'active',
             productId: item.id,
             orderId: req.body.details.id
         })
@@ -362,7 +362,7 @@ exports.saveOrder = async (req, res) => {
             console.log('create order item failed')
         }
     })
-    const updatedOrder = await Order.update({
+    const updatedOrder = await ORDER.update({
         total_price: req.body.details.total_price
     },{
         where: {
@@ -371,21 +371,21 @@ exports.saveOrder = async (req, res) => {
     })
     if (updatedOrder) {
         if (req.body.meta.addition) {
-            await OrderMeta.create({
+            await ORDER_META.create({
                 meta_key: '_addition',
                 meta_value: req.body.meta.addition,
                 orderId: req.body.details.id
             })
         }
         if (req.body.meta.discount) {
-            await OrderMeta.create({
+            await ORDER_META.create({
                 meta_key: '_discount',
                 meta_value: req.body.meta.discount,
                 orderId: req.body.details.id
             })
         }
         if (req.body.meta.shipping) {
-            await OrderMeta.create({
+            await ORDER_META.create({
                 meta_key: '_shipping',
                 meta_value: req.body.meta.shipping,
                 orderId: req.body.details.id
@@ -399,15 +399,15 @@ exports.saveOrder = async (req, res) => {
 }
 
 exports.saveCurrentOrder = async (req, res) => {
-    OrderItems.bulkCreate(req.body.items, {
+    ORDER_ITEMS.bulkCreate(req.body.items, {
         updateOnDuplicate: ['price', 'count', 'type', 'status', 'discount']
     }).then(updated_order => {
-        Order.findOne({
+        ORDER.findOne({
             include: [
             {
-                model: Product,
+                model: PRODUCT,
                 as: 'items',
-                include: [ { model: ProductMeta } ]
+                include: [ { model: PRODUCT_META } ]
             }],
             where: {
                 id: req.body.details.id
@@ -428,9 +428,9 @@ exports.saveCurrentOrder = async (req, res) => {
 }
 
 exports.payOrder = async (req, res) => {
-    const order = await Order.update(
+    const order = await ORDER.update(
         {
-            status: 'تکمیل شده'
+            status: 'completed'
         },
         {
             where: {
@@ -440,7 +440,7 @@ exports.payOrder = async (req, res) => {
     )
     if (order) {
         if (req.body.order_meta._delivery) {
-            await OrderMeta.create({
+            await ORDER_META.create({
                 meta_key: '_delivery',
                 meta_value: req.body.order_meta._delivery,
                 orderId: req.body.details.id

@@ -79,9 +79,6 @@
     flex-direction: column;
     justify-content: center;
 }
-.onp-panel-main_customer{
-    margin: auto;
-}
 .onp-panel-main_customer-information{
     position: relative;
     width: 90%;
@@ -1199,8 +1196,8 @@
 ._products-table .table th{
     border-top: unset !important;
 }
-._products-table .__table-sku,
-._new-product #input-sku{
+._products-table .__table-barcode,
+._new-product #input-barcode{
     font-family: Arial, Tahoma, san-serif;
 }
 ._products-table .__table-variation-caret-left{

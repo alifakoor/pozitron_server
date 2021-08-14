@@ -11,5 +11,5 @@ module.exports = function(app) {
     })
 
     app.post("/api/auth/signup", [authentication.checkDuplicateUsernameOrPhone, authentication.checkBusinessExist], controller.signup)
-    app.post("/api/auth/signin", [authentication.checkUserBusiness], controller.signin)
+    app.post("/api/auth/signin", [authentication.checkBusinessExist, authentication.checkUserBusiness], controller.signin)
 }

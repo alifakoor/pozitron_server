@@ -8,31 +8,31 @@
                         class="__sortable"
                     >
                         <div
-                            :class="`__sortable-commander` + [colFilter.sku.value ? ' has-command':'']"
-                            @mousedown="showFilterForSortable('sku')"
+                            :class="`__sortable-commander` + [colFilter.barcode.value ? ' has-command':'']"
+                            @mousedown="showFilterForSortable('barcode')"
                             @mouseleave="clearTimerForSortable()"
                             @mouseup="clearTimerForSortable()"
-                            @click="changeSort('sku')"
+                            @click="changeSort('barcode')"
                         >
                             <span
-                                v-if="!colFilter.sku.value"
-                            >شناسه محصول</span>
+                                v-if="!colFilter.barcode.value"
+                            >بارکد</span>
                             <span
-                                v-if="colFilter.sku.value"
-                            >{{ colFilter.sku.value }}</span>
+                                v-if="colFilter.barcode.value"
+                            >{{ colFilter.barcode.value }}</span>
                             <b-icon
-                                v-if="sortables.value === 'sku' && sortables.asc"
+                                v-if="sortables.value === 'barcode' && sortables.asc"
                                 icon="caret-up-fill"
                             ></b-icon>
                             <b-icon
-                                v-if="sortables.value === 'sku' && !sortables.asc"
+                                v-if="sortables.value === 'barcode' && !sortables.asc"
                                 icon="caret-down-fill"
                             ></b-icon>
                         </div>
-                        <div v-if="colFilter.sku.show">
+                        <div v-if="colFilter.barcode.show">
                             <div class="onp-back-drop" @click="hideFilterForSortable()"></div>
                             <div class="__sortable-input">
-                                <input type="text" v-model="colFilter.sku.value">
+                                <input type="text" v-model="colFilter.barcode.value">
                             </div>
                         </div>
                     </th>
@@ -207,8 +207,8 @@
                         <tbody :key="product.id">
                             <tr @click="loadProduct($event, product)">
                                 <td
-                                    class="__table-sku"
-                                >{{ product.sku }}</td>
+                                    class="__table-barcode"
+                                >{{ product.barcode }}</td>
                                 <td>{{ product.title }}</td>
                                 <td>{{ product.product_meta | getMetaData | getStock }}</td>
                                 <td>{{ product.product_meta | getMetaData | getPrice }}</td>
@@ -225,15 +225,15 @@
                                 </td>
                             </tr>
                             <tr
-                                v-for="child in product.Children"
+                                v-for="child in product.children"
                                 :key="child.id"
                                 @click="loadProduct($event, child)"
                                 class="__table-variations"
                             >
                                 <td>
-                                    <div class="__table-sku __table-variation-caret-left">
+                                    <div class="__table-barcode __table-variation-caret-left">
                                         <b-icon icon="caret-left-fill"></b-icon>
-                                        {{ child.sku }}
+                                        {{ child.barcode }}
                                     </div>
                                 </td>
                                 <td></td>
@@ -257,8 +257,8 @@
                         <tbody :key="product.id">
                             <tr @click="loadProduct($event, product)">
                                 <td
-                                    class="__table-sku"
-                                >{{ product.sku }}</td>
+                                    class="__table-barcode"
+                                >{{ product.barcode }}</td>
                                 <td>{{ product.title }}</td>
                                 <td>{{ product.product_meta | getMetaData | getStock }}</td>
                                 <td>{{ product.product_meta | getMetaData | getPrice }}</td>
@@ -317,11 +317,11 @@ export default {
             perPage: 20,
             currentPage: 1,
             sortables: {
-                value: 'sku',
+                value: 'barcode',
                 asc: true
             },
             colFilter: {
-                sku: {
+                barcode: {
                     show: false,
                     type: 'text',
                     value: null
@@ -387,15 +387,15 @@ export default {
             const to = (page * perPage)
             return products.slice(from, to)
         },
-        getProductChildrenSku (product) {
+        getProductChildrenBarcode (product) {
             if (product.type === 'simple') {
-                return product.sku.toLowerCase()
+                return product.barcode.toLowerCase()
             } else {
-                let sku = ''
+                let barcode = ''
                 product.Children.forEach(child => {
-                    sku = sku + child.sku
+                    barcode = barcode + child.barcode
                 })
-                return sku
+                return barcode
             }
         },
         getProductPrice (product) {
@@ -447,8 +447,8 @@ export default {
             const self = this
             self.timerForSortable = setTimeout(() => {
                 switch (col) {
-                case 'sku':
-                    self.colFilter.sku.show = true
+                case 'barcode':
+                    self.colFilter.barcode.show = true
                     break
                 case 'name':
                     self.colFilter.name.show = true
@@ -471,7 +471,7 @@ export default {
             clearTimeout(this.timerForSortable)
         },
         hideFilterForSortable () {
-            this.colFilter.sku.show = false
+            this.colFilter.barcode.show = false
             this.colFilter.name.show = false
             this.colFilter.stock.show = false
             this.colFilter.regular_price.show = false
@@ -487,9 +487,9 @@ export default {
         sortRowsForSortable (col, items) {
             let result = []
             switch (col) {
-            case 'sku':
+            case 'barcode':
                 result = items.sort((a, b) => {
-                    return (this.sortables.asc) ? a.sku.localeCompare(b.sku) : b.sku.localeCompare(a.sku)
+                    return (this.sortables.asc) ? a.barcode.localeCompare(b.barcode) : b.barcode.localeCompare(a.barcode)
                 })
                 break
             case 'name':
@@ -588,9 +588,9 @@ export default {
             let result = []
             let helper
             switch (col) {
-            case 'sku':
+            case 'barcode':
                 helper = items.filter(item => {
-                    return item.sku.toLowerCase().indexOf(value) !== -1
+                    return item.barcode.toLowerCase().indexOf(value) !== -1
                 })
                 result.push(...helper)
                 break
@@ -628,10 +628,9 @@ export default {
                     images: JSON.parse(meta._images),
                     index_image: JSON.parse(meta._images)[0],
                     big_image: JSON.parse(meta._images)[0],
-                    sku: product.sku,
+                    barcode: product.barcode,
                     name: product.title,
                     price: parseInt(meta._price),
-                    barcode: meta._barcode,
                     discount: JSON.parse(meta._discount),
                     stock: JSON.parse(meta._stock),
                     size: JSON.parse(meta._dimensions),
@@ -653,17 +652,16 @@ export default {
             }
             if (product.type === 'variable') {
                 const variations = []
-                product.Children.forEach((child) => {
+                product.children.forEach((child) => {
                     const metaHelper = this.$options.filters.getMetaData(child.product_meta)
                     const helper = {
                         id: child.id,
                         images: JSON.parse(metaHelper._images),
                         index_image: JSON.parse(metaHelper._images)[0],
                         big_image: JSON.parse(metaHelper._images)[0],
-                        sku: child.sku,
+                        barcode: child.barcode,
                         name: child.title,
                         price: parseInt(metaHelper._price),
-                        barcode: metaHelper._barcode,
                         discount: JSON.parse(metaHelper._discount),
                         stock: JSON.parse(metaHelper._stock),
                         size: JSON.parse(metaHelper._dimensions),
@@ -686,7 +684,7 @@ export default {
                     images: JSON.parse(meta._images),
                     index_image: JSON.parse(meta._images)[0],
                     big_image: JSON.parse(meta._images)[0],
-                    sku: product.sku,
+                    barcode: product.barcode,
                     name: product.title,
                     permalink: JSON.parse(meta._links),
                     description: product.description,
@@ -699,7 +697,7 @@ export default {
                     attributes: JSON.parse(meta._attributes),
                     variations: {
                         fields: [
-                            { key: 'sku', label: 'شناسه' },
+                            { key: 'barcode', label: 'شناسه' },
                             { key: 'variation', label: 'متغیر' },
                             { key: 'select' }
                         ],
@@ -713,11 +711,10 @@ export default {
                     images: JSON.parse(meta._images),
                     index_image: JSON.parse(meta._images)[0],
                     big_image: JSON.parse(meta._images)[0],
-                    sku: product.sku,
+                    barcode: product.barcode,
                     name: product.title,
                     parentId: product.parent_id,
                     price: parseInt(meta._price),
-                    barcode: meta._barcode,
                     discount: JSON.parse(meta._discount),
                     stock: JSON.parse(meta._stock),
                     size: JSON.parse(meta._dimensions),
@@ -747,16 +744,16 @@ export default {
                 if (this.globalSearch.values !== null && this.globalSearch.values.length > 0) {
                     let filteredRows = []
                     const result = []
-                    let sku = []
+                    let barcode = []
                     let titles = []
                     let prices = []
                     let attributes = []
                     const globalSearchValues = this.globalSearch.values.toLowerCase().split(' ')
                     globalSearchValues.forEach((filter) => {
                         if (!filteredRows.length) {
-                            sku = products.filter(product => {
-                                const sku = this.getProductChildrenSku(product)
-                                if (sku.indexOf(filter) !== -1) return product
+                            barcode = products.filter(product => {
+                                const barcode = this.getProductChildrenBarcode(product)
+                                if (barcode.indexOf(filter) !== -1) return product
                             })
                             titles = products.filter(product => {
                                 return product.title.toLowerCase().indexOf(filter) !== -1
@@ -772,9 +769,9 @@ export default {
                                 if (attr.indexOf(filter) !== -1) return product
                             })
                         } else {
-                            sku = filteredRows.filter(product => {
-                                const sku = this.getProductChildrenSku(product)
-                                if (sku.indexOf(filter) !== -1) return product
+                            barcode = filteredRows.filter(product => {
+                                const barcode = this.getProductChildrenBarcode(product)
+                                if (barcode.indexOf(filter) !== -1) return product
                             })
                             titles = filteredRows.filter(product => {
                                 return product.title.toLowerCase().indexOf(filter) !== -1
@@ -791,7 +788,7 @@ export default {
                             })
                         }
                         filteredRows = []
-                        filteredRows.push(...sku)
+                        filteredRows.push(...barcode)
                         filteredRows.push(...titles)
                         filteredRows.push(...prices)
                         filteredRows.push(...attributes)
@@ -839,7 +836,7 @@ export default {
         },
         hasColFilters () {
             const colFilter = this.colFilter
-            return !!(colFilter.sku.value || colFilter.name.value || colFilter.stock.value || colFilter.regular_price.value || colFilter.attribute.selected.length || colFilter.online_price.value || colFilter.online_stock.value || colFilter.online_sell.selected.length)
+            return !!(colFilter.barcode.value || colFilter.name.value || colFilter.stock.value || colFilter.regular_price.value || colFilter.attribute.selected.length || colFilter.online_price.value || colFilter.online_stock.value || colFilter.online_sell.selected.length)
         },
         ...mapState({
             table: state => state.product.table,

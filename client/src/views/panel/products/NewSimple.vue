@@ -65,16 +65,16 @@
             <b-row>
                 <b-col>
                     <b-form-group
-                        id="fieldset-sku"
+                        id="fieldset-barcode"
                         label-cols="4"
                         content-cols="8"
                         label-size="sm"
                         label-align="right"
-                        label="شناسه محصول:"
-                        label-for="input-sku"
+                        label="بارکد:"
+                        label-for="input-barcode"
                         class="mb-1"
                     >
-                        <b-form-input id="input-sku" v-model="form.sku"></b-form-input>
+                        <b-form-input id="input-barcode" v-model="form.barcode"></b-form-input>
                     </b-form-group>
                 </b-col>
             </b-row>
@@ -180,22 +180,6 @@
                     </b-form-group>
                 </b-col>
             </b-row>
-            <b-row>
-                <b-col>
-                    <b-form-group
-                        id="fieldset-barcode"
-                        label-cols="4"
-                        content-cols="8"
-                        label-size="sm"
-                        label-align="right"
-                        label="بارکد:"
-                        label-for="input-barcode"
-                        class="mb-1"
-                    >
-                        <b-form-input id="input-barcode" v-model="form.sku"></b-form-input>
-                    </b-form-group>
-                </b-col>
-            </b-row>
         </div>
         <div
             v-if="currentTab === 'second'"
@@ -267,7 +251,7 @@
                         label-size="sm"
                         label-align="right"
                         label="قیمت آنلاین:"
-                        label-for="input-sku"
+                        label-for="input-price"
                         class="mb-1"
                     >
                         <b-row>
@@ -326,7 +310,7 @@
                                 <b-form-input id="input-online-stock" v-model="form.online_stock" :formatter="toEnglish"></b-form-input>
                             </b-col>
                             <b-col md="6" class="pr-0">
-                                <b-form-input id="input-online-stock" v-model="form.permalink" placeholder="% لینک"></b-form-input>
+                                <b-form-input id="input-permalink" v-model="form.permalink" placeholder="% لینک"></b-form-input>
                             </b-col>
                         </b-row>
                     </b-form-group>

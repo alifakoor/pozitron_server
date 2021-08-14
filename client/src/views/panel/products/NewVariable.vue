@@ -64,16 +64,16 @@
             <b-row>
                 <b-col>
                     <b-form-group
-                        id="fieldset-sku"
+                        id="fieldset-barcode"
                         label-cols="4"
                         content-cols="8"
                         label-size="sm"
                         label-align="right"
-                        label="شناسه محصول:"
-                        label-for="input-sku"
+                        label="شناسه:"
+                        label-for="input-barcode"
                         class="mb-1"
                     >
-                        <b-form-input id="input-sku" v-model="form.sku"></b-form-input>
+                        <b-form-input id="input-barcode" v-model="form.barcode"></b-form-input>
                     </b-form-group>
                 </b-col>
             </b-row>
@@ -154,7 +154,7 @@
                                 <b-form-select
                                     v-model="data.item.selected"
                                     :options="data.item.options"
-                                    @input="attributeSelectForVariation(data.item.sku)"
+                                    @input="attributeSelectForVariation(data.item.barcode)"
                                     size="sm"
                                     plain
                                 ></b-form-select>
@@ -304,8 +304,8 @@ export default {
             }
         },
         addNewVariations () {
-            if (!this.form.sku || !this.attributes.selected) {
-                this.$bvToast.toast('شناسه یا متغیر نامشخص است.', {
+            if (!this.form.barcode || !this.attributes.selected) {
+                this.$bvToast.toast('بارکد یا متغیر نامشخص است.', {
                     title: 'هشدار',
                     variant: 'danger',
                     solid: true
@@ -316,7 +316,7 @@ export default {
             this.form.attributes.name = selectedAtt.text
             this.form.attributes.value = selectedAtt.value
             const variation = {
-                sku: this.form.sku + '0' + (this.form.variations.items.length + 1),
+                barcode: this.form.barcode + '0' + (this.form.variations.items.length + 1),
                 stock: {
                     value: 0,
                     selected: 'number',
@@ -410,16 +410,16 @@ export default {
                 centered: true
             }).then(response => {
                 if (response) {
-                    const skus = []
+                    const barcodes = []
                     this.form.variations.items.map(item => {
                         if (item.selected_for_remove) {
-                            skus.push(item.sku)
+                            barcodes.push(item.barcode)
                         }
                     })
                     this.form.variations.items = this.form.variations.items.filter(item => {
-                        return !skus.includes(item.sku)
+                        return !barcodes.includes(item.barcode)
                     })
-                    this.$store.dispatch('product/deleteProductVariation', skus)
+                    this.$store.dispatch('product/deleteProductVariation', barcodes)
                 }
             }).catch(err => {
                 console.log(err)
@@ -455,7 +455,7 @@ export default {
     },
     watch: {
         form (newValue, oldValue) {
-            if (newValue.sku !== oldValue.sku) this.selectedAllVariations = false
+            if (newValue.barcode !== oldValue.barcode) this.selectedAllVariations = false
         }
     }
 }

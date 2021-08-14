@@ -13,10 +13,9 @@ const emptyForm = () => {
             images: [],
             index_image: null,
             big_image: null,
-            sku: null,
+            barcode: null,
             name: null,
             price: 0,
-            barcode: 0,
             discount: {
                 value: 0,
                 selected: 'cash',
@@ -59,7 +58,7 @@ const emptyForm = () => {
             images: [],
             index_image: null,
             big_image: null,
-            sku: null,
+            barcode: null,
             name: null,
             permalink: null,
             description: null,
@@ -75,7 +74,7 @@ const emptyForm = () => {
             },
             variations: {
                 fields: [
-                    { key: 'sku', label: 'شناسه' },
+                    { key: 'barcode', label: 'بارکد' },
                     { key: 'variation', label: 'متغیر' },
                     { key: 'select' }
                 ],
@@ -86,11 +85,10 @@ const emptyForm = () => {
             images: [],
             index_image: null,
             big_image: null,
-            sku: null,
+            barcode: null,
             name: null,
             parentId: null,
             price: 0,
-            barcode: 0,
             discount: {
                 value: 0,
                 selected: 'cash',
@@ -265,8 +263,8 @@ const actions = {
                 }
             }).catch((err) => { console.log(err) })
     },
-    deleteProductVariation ({ commit }, skus = []) {
-        return axios.post(API_URL + 'delete_product_variation', skus, { headers: authHeader() })
+    deleteProductVariation ({ commit }, barcodes = []) {
+        return axios.post(API_URL + 'delete_product_variation', barcodes, { headers: authHeader() })
             .then((res) => {
                 if (res.status) {
                     commit('removeVariationsFromTable', res.data)
@@ -348,7 +346,7 @@ const mutations = {
             })
             state.products.push(data)
         }
-        state.globalSearch.values = data.sku
+        state.globalSearch.values = data.barcode
         state.table.busy = false
         state.newProduct.type = null
     },
@@ -372,27 +370,27 @@ const mutations = {
             }
         })
     },
-    removeProductFromTable (state, sku) {
+    removeProductFromTable (state, barcode) {
         if (state.newProduct.type === 'productVariation') {
             state.products.find(product => {
                 if (product.id === state.newProduct.variation.parentId) {
                     product.Children = product.Children.filter(child => {
-                        return child.sku !== sku
+                        return child.barcode !== barcode
                     })
                 }
             })
             Object.assign(state.newProduct, emptyForm())
         }
         state.products = state.products.filter(product => {
-            return product.sku !== sku
+            return product.barcode !== barcode
         })
         state.table.busy = false
     },
-    removeVariationsFromTable (state, skus) {
+    removeVariationsFromTable (state, barcodes) {
         state.products.find(product => {
             if (product.id === state.newProduct.variable.id) {
                 product.Children = product.Children.filter(child => {
-                    return !skus.includes(child.sku)
+                    return !barcodes.includes(child.barcode)
                 })
             }
         })

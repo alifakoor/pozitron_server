@@ -1,6 +1,4 @@
-// import {auth} from "../../../client/src/store/auth.module";
-
-const { authJWT } = require("../middlewares")
+const { authJWT, authorization } = require("../middlewares")
 const controller = require("../controllers/order.controllers.js")
 
 module.exports = function(app) {
@@ -18,7 +16,7 @@ module.exports = function(app) {
     app.post("/api/orders/complete_cart", [authJWT.verifyToken], controller.completeCart)
     app.get("/api/orders/previous_orders", [authJWT.verifyToken], controller.getPreviousOrders)
     app.post("/api/orders/get_customer", [authJWT.verifyToken], controller.getCustomer)
-    app.post("/api/orders/create", [authJWT.verifyToken], controller.createOrder)
+    app.post("/api/orders/create", [authJWT.verifyToken, authorization.checkUserBusinessByUserId], controller.createOrder)
     app.post("/api/orders/delete", [authJWT.verifyToken], controller.deleteOrder)
     app.post("/api/orders/delete_item_from_order", [authJWT.verifyToken], controller.deleteItemFromOrder)
     app.post("/api/orders/save", [authJWT.verifyToken], controller.saveOrder)

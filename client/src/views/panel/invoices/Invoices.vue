@@ -477,8 +477,8 @@
                                             <td>{{ invoice.createdAt | moment('jYY/jMM/jDD')}}</td>
                                             <td>{{ invoice.total_price.toLocaleString()}}</td>
                                             <td>
-                                                <b-badge :variant="(invoice.status === 'تکمیل شده')?'success':'warning'">
-                                                    {{ invoice.status }}
+                                                <b-badge :variant="(invoice.status === 'completed')?'success':'warning'">
+                                                    {{ invoice.status | translateStatus }}
                                                 </b-badge>
                                             </td>
                                             <td>{{ (invoice.order_meta._delivery) ? (invoice.order_meta._delivery) : '-' }}</td>
@@ -784,11 +784,11 @@ export default {
                     type: 'select',
                     selected: [],
                     options: [
-                        { text: 'لغو شده', value: 'لغو شده' },
-                        { text: 'در انتظار پرداخت', value: 'در انتظار پرداخت' },
-                        { text: 'در حال انجام', value: 'در حال انجام' },
-                        { text: 'در حال ارسال', value: 'در حال ارسال' },
-                        { text: 'تکمیل شده', value: 'تکمیل شده' }
+                        { text: 'لغو شده', value: 'canceled' },
+                        { text: 'در انتظار پرداخت', value: 'pending-payment' },
+                        { text: 'در حال انجام', value: 'on-hold' },
+                        { text: 'در حال ارسال', value: 'processing' },
+                        { text: 'تکمیل شده', value: 'completed' }
                     ]
                 },
                 delivery: {
@@ -1289,6 +1289,19 @@ export default {
         deliveryTime: (value) => {
             value = JSON.parse(value._delivery)
             return (jm.unix(value.date).format('jMM/jDD')) + ' ' + value.time
+        },
+        translateStatus: (status) => {
+            const options = [
+                { text: 'لغو شده', value: 'canceled' },
+                { text: 'در انتظار پرداخت', value: 'pending-payment' },
+                { text: 'در حال انجام', value: 'on-hold' },
+                { text: 'در حال ارسال', value: 'processing' },
+                { text: 'تکمیل شده', value: 'completed' }
+            ]
+            const currentTranslate = options.find(option => {
+                if (option.value === status) return option
+            })
+            return currentTranslate.text
         }
     }
 }

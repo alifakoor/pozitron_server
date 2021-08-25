@@ -473,7 +473,7 @@
                                                 <b-icon v-if="!invoice.source" icon="shop"></b-icon>
                                             </td>
                                             <td>{{ invoice.id }}</td>
-                                            <td>{{ invoice.customer.fullname }}</td>
+                                            <td>{{ (invoice.customer) ? invoice.customer.fullname : 'نامشخص' }}</td>
                                             <td>{{ invoice.createdAt | moment('jYY/jMM/jDD')}}</td>
                                             <td>{{ invoice.total_price.toLocaleString()}}</td>
                                             <td>
@@ -500,7 +500,7 @@
                 <div class="_current-invoice-title">
                     <span>شماره فاکتور: </span>
                     <span>{{ currentInvoice.id }} - {{ currentInvoice.status }}</span>
-                    <span>{{ currentInvoice.customer.fullname }}</span>
+                    <span>{{ (currentInvoice.customer) ? currentInvoice.customer.fullname : 'نامشخص' }}</span>
                 </div>
                 <div class="_current-invoice-content">
                     <b-row class="_current-invoice-content__items">
@@ -572,7 +572,7 @@
                                     <p>شماره موبایل: </p>
                                 </b-col>
                                 <b-col md="8" class="p-0">
-                                    <p>{{ currentInvoice.customer.phone }}</p>
+                                    <p>{{ (currentInvoice.customer) ? currentInvoice.customer.phone : 'نامشخص' }}</p>
                                 </b-col>
                             </b-row>
                             <b-row class="__details created_date">

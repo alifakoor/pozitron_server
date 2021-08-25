@@ -125,15 +125,22 @@ export default {
         },
         async sync () {
             await this.$store.dispatch('settings/syncCategories')
-            await this.$store.dispatch('settings/syncProducts')
-            await this.$store.dispatch('settings/syncProductVariations')
-            await this.$store.dispatch('settings/syncOrders')
+            if (this.syncStatus.categories) {
+                await this.$store.dispatch('settings/syncProducts')
+            }
+            if (this.syncStatus.products) {
+                await this.$store.dispatch('settings/syncProductVariations')
+            }
+            if (this.syncStatus.variations) {
+                await this.$store.dispatch('settings/syncOrders')
+            }
         }
     },
     computed: {
         ...mapState({
             user: state => state.auth.user,
-            userWebsite: state => state.settings.userWebsite
+            userWebsite: state => state.settings.userWebsite,
+            syncStatus: state => state.settings.sync
         })
     }
 }

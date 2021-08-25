@@ -20,7 +20,7 @@ const ORDER_META = DB.ordermeta
 const ORDER_ITEM = DB.orderItems
 
 const user = {
-    getWebsiteData: async (userId) => {
+    async getWebsiteData(userId) {
         return await USER_META.findAll({
             where: {
                 userId: userId
@@ -33,7 +33,7 @@ const user = {
             }
         }).catch(err => console.log(err))
     },
-    createWcApi: (websiteData) => {
+    createWcApi(websiteData) {
         return new WC ({
             url: "https://"+websiteData._address,
             consumerKey: websiteData._consumer_key,
@@ -41,7 +41,7 @@ const user = {
             version: websiteData._api_version
         })
     },
-    createTerms: (terms, callback) => {
+    createTerms(terms, business_id, callback) {
         terms.map((term) => {
             TERM.upsert({
                 reference_id: term.id,
@@ -51,7 +51,8 @@ const user = {
                 count: term.count,
                 link: JSON.stringify(term._links),
                 type: 'category',
-                status: 'active'
+                status: 'active',
+                business_id: business_id
             },{
                 returning: true
             }).then((created_term) => {
@@ -73,104 +74,22 @@ const user = {
         })
         callback()
     },
-    createProducts: (products, callback) => {
+    createProducts(products, business_id, callback) {
         products.map((product) => {
             PRODUCT.upsert({
                 reference_id: product.id,
                 title: product.name,
                 description: product.description,
                 slug: product.slug,
-                sku: product.sku,
+                barcode: product.sku,
                 type: product.type,
-                status: product.status
+                status: product.status,
+                business_id: business_id
             },{
                 returning: true
             }).then((created_row) => {
                 created_row = created_row[0]
-                PRODUCT_META.bulkCreate([
-                    {
-                        meta_key: '_attributes',
-                        meta_value: syncHelpers.syncProductAttributes(product.type, product.attributes),
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_price',
-                        meta_value: product.price,
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_barcode',
-                        meta_value: product.sku,
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_discount',
-                        meta_value: JSON.stringify({
-                            "value":0,
-                            "selected":"cash",
-                            "options":[
-                                {"text":"%","value":"percent"},
-                                {"text":"هـ.ت","value":"cash"}
-                            ]
-                        }),
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_stock',
-                        meta_value: JSON.stringify({
-                            "value":(product.stock_quantity)?0:Number(product.stock_quantity),
-                            "selected":"number",
-                            "options":[
-                                {"text":"∞","value":"infinity"},
-                                {"text":"عـدد","value":"number"}
-                            ]
-                        }),
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_dimensions',
-                        meta_value: JSON.stringify(product.dimensions),
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_weight',
-                        meta_value: product.weight,
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_online_sell',
-                        meta_value: 1,
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_online_price',
-                        meta_value: product.price,
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_online_discount',
-                        meta_value: null,
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_online_stock',
-                        meta_value: (product.stock_quantity)?0:Number(product.stock_quantity),
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_links',
-                        meta_value: JSON.stringify(product._links),
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_images',
-                        meta_value: JSON.stringify(product.images),
-                        productId: created_row.id
-                    }
-                ],{
-                    updateOnDuplicate: ['meta_value']
-                }).then(() => {
-                    console.log(`product meta imported.`)
+                this.createProductMeta(product, created_row.id, () => {
                     if (product.categories.length > 0) {
                         product.categories.map(term => {
                             TERM.findOne({
@@ -188,8 +107,6 @@ const user = {
                             }).catch((err) => { console.log(`not found product meta ${err}`) })
                         })
                     }
-                }).catch((err) => {
-                    console.log(`create product meta failed with err: ${err}`)
                 })
             }).catch((err) => {
                 console.log(`create product failed with err: ${err}`)
@@ -197,105 +114,22 @@ const user = {
         })
         callback()
     },
-    createProductVariations: (product, variations, callback) => {
+    createProductVariations(product, variations, business_id, callback) {
         variations.map((variation) => {
             PRODUCT.upsert({
                 reference_id: variation.id,
                 title: product.title + ' - ' + variation.attributes[0].option,
                 description: variation.description,
                 slug: (variation.slug !== 'undefined') ? variation.slug : variation.sku,
-                sku: variation.sku,
+                barcode: variation.sku,
                 type: 'product_variation',
                 status: variation.status,
-                parent_id: product.id
+                parent_id: product.id,
+                business_id: business_id
             }).then((created_row) => {
                 created_row = created_row[0]
-                PRODUCT_META.bulkCreate([
-                    {
-                        meta_key: '_attributes',
-                        meta_value: syncHelpers.syncProductAttributes(variation.type, variation.attributes),
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_price',
-                        meta_value: variation.price,
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_barcode',
-                        meta_value: variation.sku,
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_discount',
-                        meta_value: JSON.stringify({
-                            "value":0,
-                            "selected":"cash",
-                            "options":[
-                                {"text":"%","value":"percent"},
-                                {"text":"هـ.ت","value":"cash"}
-                            ]
-                        }),
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_stock',
-                        meta_value: JSON.stringify({
-                            "value":(variation.stock_quantity)?0:Number(variation.stock_quantity),
-                            "selected":"number",
-                            "options":[
-                                {"text":"∞","value":"infinity"},
-                                {"text":"عـدد","value":"number"}
-                            ]
-                        }),
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_dimensions',
-                        meta_value: JSON.stringify(variation.dimensions),
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_weight',
-                        meta_value: variation.weight,
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_online_sell',
-                        meta_value: 1,
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_online_price',
-                        meta_value: variation.price,
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_online_discount',
-                        meta_value: null,
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_online_stock',
-                        meta_value: (variation.stock_quantity)?0:Number(variation.stock_quantity),
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_links',
-                        meta_value: JSON.stringify(variation._links),
-                        productId: created_row.id
-                    },
-                    {
-                        meta_key: '_images',
-                        meta_value: JSON.stringify(variation.images),
-                        productId: created_row.id
-                    }
-                ],{
-                    updateOnDuplicate: ['meta_value']
-                }).then(() => {
-                    console.log(`product meta imported.`)
-                }).catch((err) => {
-                    console.log(`create product meta failed with err: ${err}`)
+                this.createProductMeta(variation, created_row.id, () => {
+                    // do nothing
                 })
             }).catch((err) => {
                 console.log(`create product failed with err: ${err}`)
@@ -304,7 +138,92 @@ const user = {
         })
         callback()
     },
-    createOrders: (orders, callback) => {
+    createProductMeta(product, product_id, callback) {
+        PRODUCT_META.bulkCreate([
+            {
+                meta_key: '_attributes',
+                meta_value: syncHelpers.syncProductAttributes(product.type, product.attributes),
+                productId: product_id
+            },
+            {
+                meta_key: '_price',
+                meta_value: product.price,
+                productId: product_id
+            },
+            {
+                meta_key: '_discount',
+                meta_value: JSON.stringify({
+                    "value":0,
+                    "selected":"cash",
+                    "options":[
+                        {"text":"%","value":"percent"},
+                        {"text":"هـ.ت","value":"cash"}
+                    ]
+                }),
+                productId: product_id
+            },
+            {
+                meta_key: '_stock',
+                meta_value: JSON.stringify({
+                    "value":(product.stock_quantity)?0:Number(product.stock_quantity),
+                    "selected":"number",
+                    "options":[
+                        {"text":"∞","value":"infinity"},
+                        {"text":"عـدد","value":"number"}
+                    ]
+                }),
+                productId: product_id
+            },
+            {
+                meta_key: '_dimensions',
+                meta_value: JSON.stringify(product.dimensions),
+                productId: product_id
+            },
+            {
+                meta_key: '_weight',
+                meta_value: product.weight,
+                productId: product_id
+            },
+            {
+                meta_key: '_online_sell',
+                meta_value: 1,
+                productId: product_id
+            },
+            {
+                meta_key: '_online_price',
+                meta_value: product.price,
+                productId: product_id
+            },
+            {
+                meta_key: '_online_discount',
+                meta_value: null,
+                productId: product_id
+            },
+            {
+                meta_key: '_online_stock',
+                meta_value: (product.stock_quantity)?0:Number(product.stock_quantity),
+                productId: product_id
+            },
+            {
+                meta_key: '_links',
+                meta_value: JSON.stringify(product._links),
+                productId: product_id
+            },
+            {
+                meta_key: '_images',
+                meta_value: JSON.stringify(product.images),
+                productId: product_id
+            }
+        ],{
+            updateOnDuplicate: ['meta_value']
+        }).then(() => {
+            console.log(`product meta imported.`)
+            callback()
+        }).catch((err) => {
+            console.log(`create product meta failed with err: ${err}`)
+        })
+    },
+    createOrders(orders, user_id, callback) {
         orders.map((order) => {
             if (order.status === 'completed') {
                 ORDER.upsert({
@@ -312,7 +231,8 @@ const user = {
                     order_key: order.order_key,
                     total_price: order.total,
                     type: 'type_1',
-                    status: order.status
+                    status: order.status,
+                    userId: user_id
                 },{
                     returning: true
                 }).then((created_row) => {
@@ -343,20 +263,10 @@ const user = {
                     }).then(() => {
                         console.log(`order meta imported.`)
                         if (order.line_items.length > 0) {
-                            order.line_items.map(term => {
-                                ORDER_ITEM.findOne({
-                                    where: { reference_id: term.id }
-                                }).then((founded_term) => {
-                                    TERM_RELATION.upsert({
-                                        term_order: 1,
-                                        productId: created_row.id,
-                                        termId: founded_term.id
-                                    }).then(() => {
-                                        console.log(`create product's category was successful.`)
-                                    }).catch((err) => {
-                                        console.log(`create product's category failed with err: ${err}`)
-                                    })
-                                }).catch((err) => { console.log(`not found product meta ${err}`) })
+                            order.line_items.map(item => {
+                                this.createOrderItems(created_row.id, item, () => {
+                                    console.log(`order item is created.`)
+                                })
                             })
                         }
                     }).catch((err) => {
@@ -368,6 +278,25 @@ const user = {
             }
         })
         callback()
+    },
+    createOrderItems(order_id, item, callback) {
+        PRODUCT.findOne({
+            where: { reference_id: item.product_id }
+        }).then((founded_product) => {
+            ORDER_ITEM.upsert({
+                price: item.price,
+                count: item.quantity,
+                discount: JSON.stringify({"type":"percent","amount":0}),
+                type: "type_1",
+                status: "active",
+                productId: founded_product.id,
+                orderId: order_id
+            }).then(() => {
+                callback()
+            }).catch((err) => {
+                console.log(`function: createOrderItems, error: item not created with error: ${err}`)
+            })
+        }).catch((err) => { console.log(`function: createOrderItems, error: Product not found with error:${err}`) })
     }
 }
 
@@ -450,7 +379,7 @@ exports.syncCategories = async (req, res) => {
                 .finally(() => {})
         } while (page < total_page)
 
-        await user.createTerms(api_result, () => {
+        await user.createTerms(api_result, req.business, () => {
             res.status(200).json({ message: 'دسته بندی ها با موفقیت همگام سازی شده اند.'})
         })
     }
@@ -475,7 +404,8 @@ exports.syncProducts = async (req, res) => {
                 console.log("Response Data:", err.response.data)
             }).finally(() => {})
         } while (page < total_page)
-        await user.createProducts(api_result, () => {
+
+        await user.createProducts(api_result, req.business, () => {
             res.status(200).json({ message: 'محصولات با موفقیت همگام سازی شده اند.'})
         })
     }
@@ -483,13 +413,14 @@ exports.syncProducts = async (req, res) => {
 
 exports.syncProductVariations = async (req, res) => {
     const website = await user.getWebsiteData(req.userId)
+
     if (website) {
         const api = user.createWcApi(website)
         let variable_products = await PRODUCT.findAll({
             where: {
                 type: 'variable'
             }
-        }) | []
+        })
         if (variable_products.length > 0) {
             variable_products.map(async (variable) => {
                 let api_result = []
@@ -508,7 +439,8 @@ exports.syncProductVariations = async (req, res) => {
                         console.log("Response Data:", err.response.data)
                     }).finally(() => {})
                 } while (page < total_page)
-                await user.createProductVariations(variable, api_result, () => {
+
+                await user.createProductVariations(variable, api_result, req.business, () => {
                     res.status(200).json({ message: 'محصولات متغیر با موفقیت همگام سازی شده اند.'})
                 })
             })
@@ -535,7 +467,7 @@ exports.syncOrders = async (req, res) => {
                 console.log("Response Data:", err.response.data)
             }).finally(() => {})
         } while (page < total_page)
-        await user.createOrders(api_result, () => {
+        await user.createOrders(api_result, req.userId, () => {
             res.status(200).json({ message: 'سفارشات با موفقیت همگام سازی شده اند.'})
         })
     }

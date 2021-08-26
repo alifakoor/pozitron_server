@@ -521,8 +521,7 @@
                                             {{ item.order_items.price.toLocaleString() }} تومان
                                         </p>
                                         <p v-if="JSON.parse(item.order_items.discount).amount !== 0">
-                                            {{ ((JSON.parse(item.order_items.discount).type === 'percent') ? ((item.order_items.price - (JSON.parse(item.order_items.discount).amount / 100) * item.order_items.price)) : (item.order_items.price - (JSON.parse(item.order_items.discount).amount * 1000 ))).toLocaleString()
-                                            }} تومان
+                                            {{ item.order_items.discount | showDiscount(item.order_items.price) }} تومان
                                         </p>
                                     </b-col>
                                 </div>
@@ -559,7 +558,7 @@
                                     <p class="m-0">جمع کل: </p>
                                 </b-col>
                                 <b-col class="p-0">
-                                    <p class="m-0">{{ totalPrice }} تومان</p>
+                                    <p class="m-0">{{ currentInvoice.total_price.toLocaleString() }} تومان</p>
                                 </b-col>
                                 </div>
                             </b-row>
@@ -1256,7 +1255,7 @@ export default {
             const invoice = this.currentInvoice
             if (!invoice.products) return
             let totalPrice = 0
-            invoice.products.forEach((item) => {
+            invoice.products.map((item) => {
                 const discount = JSON.parse(item.order_items.discount)
                 if (discount.amount) {
                     if (discount.type === 'percent') {
@@ -1302,6 +1301,13 @@ export default {
                 if (option.value === status) return option
             })
             return currentTranslate.text
+        },
+        showDiscount (discount, price) {
+            discount = JSON.parse(discount)
+            if (discount.type === 'percent') {
+                return price * (1 - discount.amount / 100)
+            }
+            return (price - discount.amount * 1000).toLocaleString()
         }
     }
 }

@@ -241,22 +241,22 @@ const user = {
                         {
                             meta_key: '_addition',
                             meta_value: 0,
-                            productId: created_row.id
+                            orderId: created_row.id
                         },
                         {
                             meta_key: '_discount',
                             meta_value: Number(order.discount_total),
-                            productId: created_row.id
+                            orderId: created_row.id
                         },
                         {
                             meta_key: '_shipping',
                             meta_value: Number(order.shipping_total),
-                            productId: created_row.id
+                            orderId: created_row.id
                         },
                         {
                             meta_key: '_delivery',
                             meta_value: null,
-                            productId: created_row.id
+                            orderId: created_row.id
                         }
                     ],{
                         updateOnDuplicate: ['meta_value']
@@ -286,7 +286,7 @@ const user = {
             ORDER_ITEM.upsert({
                 price: item.price,
                 count: item.quantity,
-                discount: JSON.stringify({"type":"percent","amount":0}),
+                discount: {type:"percent",amount:0},
                 type: "type_1",
                 status: "active",
                 productId: founded_product.id,

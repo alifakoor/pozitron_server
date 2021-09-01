@@ -24,7 +24,7 @@ app.use(bodyParser.urlencoded({ extended: true }))
 app.use(express.static('app/statics'))
 
 const db = require("./app/models")
-db.sequelize.sync({ alter: true, force: true })
+db.sequelize.sync()
 
 // routes
 require("./app/routes/auth.routes.js")(app)

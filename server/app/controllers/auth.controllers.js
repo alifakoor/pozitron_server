@@ -3,6 +3,8 @@ const config = require("../config/auth.config.js")
 const USER = db.user
 const BUSINESS = db.business
 
+const TOKEN_EXPIRATION_DURATION = 86400
+
 let jwt = require("jsonwebtoken")
 let bcrypt = require("bcryptjs")
 
@@ -58,8 +60,10 @@ exports.signin = (req, res) => {
             })
 
         let token = jwt.sign({ id: user.id, business_id: user.business_id }, config.secret, {
-            expiresIn: 86400 // 24 hours
+            expiresIn: TOKEN_EXPIRATION_DURATION // 24 hours
         })
+
+        const date = new Date()
 
         res.status(200).send({
             id: user.id,
@@ -70,7 +74,8 @@ exports.signin = (req, res) => {
             status: user.status,
             created_at: user.createdAt,
             business_id: user.business_id,
-            token: token
+            token: token,
+            token_expiration: Math.floor(date.getTime() / 1000) + TOKEN_EXPIRATION_DURATION
         })
 
     }).catch(err => {

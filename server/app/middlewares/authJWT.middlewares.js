@@ -16,6 +16,12 @@ verifyToken = (req, res, next) => {
             return res.status(401).send({
                 message: "Unauthorized!"
             })
+        const date = new Date()
+        if (Math.floor(date.getTime() / 1000) > decoded.exp){
+            return res.status(401).send({
+                message: "Unauthorized!"
+            })
+        }
         req.userId = decoded.id
         req.business = decoded.business_id
         next()

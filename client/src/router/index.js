@@ -127,10 +127,14 @@ router.beforeEach((to, from, next) => {
     document.title = 'آنلاین نو پوز | ' + to.meta.title
     const publicPages = ['/login', '/register']
     const authRequired = !publicPages.includes(to.path)
-    const loggedIn = localStorage.getItem('user')
-    if (authRequired && !loggedIn) {
+    const user = JSON.parse(sessionStorage.getItem('user'))
+    console.log(to.path, user)
+    if (authRequired && !user) {
         next('/login')
     } else {
+        // if (to.path === '/') {
+        //     next('/panel')
+        // }
         next()
     }
 })

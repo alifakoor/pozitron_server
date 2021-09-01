@@ -13,7 +13,7 @@ class AuthService {
             })
             .then(response => {
                 if (response.status === 200 && response.data.token) {
-                    localStorage.setItem('user', JSON.stringify(response.data))
+                    sessionStorage.setItem('user', JSON.stringify(response.data))
                 }
 
                 return response.data
@@ -21,7 +21,7 @@ class AuthService {
     }
 
     logout () {
-        localStorage.removeItem('user')
+        sessionStorage.removeItem('user')
     }
 
     register (user) {

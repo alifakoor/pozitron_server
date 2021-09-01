@@ -27,7 +27,7 @@ db.user          = require("./user.models.js")(sequelize, Sequelize)
 db.usermeta      = require("./usermeta.models.js")(sequelize, Sequelize)
 db.business      = require("./business.models.js")(sequelize, Sequelize)
 db.customer      = require("./customer.models.js")(sequelize, Sequelize)
-db.customermeta  = require("./customermeta.models.js")(sequelize, Sequelize)
+// db.customermeta  = require("./customermeta.models.js")(sequelize, Sequelize)
 db.product       = require("./product.models.js")(sequelize, Sequelize)
 db.productmeta   = require("./productmeta.models.js")(sequelize, Sequelize)
 db.term          = require("./terms.models.js")(sequelize, Sequelize)
@@ -44,8 +44,8 @@ db.user.hasMany(db.usermeta)
 db.usermeta.belongsTo(db.user)
 
 // association customers & customermeta models
-db.customer.hasMany(db.customermeta)
-db.customermeta.belongsTo(db.customer)
+// db.customer.hasMany(db.customermeta)
+// db.customermeta.belongsTo(db.customer)
 
 // association product & productmeta models
 db.product.hasMany(db.product, {

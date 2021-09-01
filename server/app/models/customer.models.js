@@ -1,5 +1,5 @@
 module.exports = (sequelize, Sequelize) => {
-    const Customer = sequelize.define("customers", {
+    return sequelize.define("customers", {
         fullname: {
             type: Sequelize.STRING, // VARCHAR(255)
             allowNull: true
@@ -11,10 +11,15 @@ module.exports = (sequelize, Sequelize) => {
             validate: {
                 is: /^(0)?9\d{9}$/i
             }
+        },
+        email: {
+            type: Sequelize.STRING,
+            allowNull: true,
+            validate: {
+                isEmail: true,
+            }
         }
     }, {
         underscored: true,
     })
-
-    return Customer
 }

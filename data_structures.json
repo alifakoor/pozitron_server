@@ -1,0 +1,51 @@
+{
+  "station": {
+    "product": {
+      "title": "varchar, 200",
+      "description":  "text",
+      "slug": "varchar, 200",
+      "barcode": "varchar, 200",
+      "type": "varchar, 20",
+      "status": "varchar, 20",
+      "parent_id": "int, 11, foreign_key(itself)",
+      "business_id": "int, 11, foreign_key(business)",
+      "reference_id": "bigint, 11, woocommerce_id"
+    },
+    "order": {
+      "order_key": "varchar, 10",
+      "total_price": "bigint, 11",
+      "source": "int, 2",
+      "type": "varchar, 20",
+      "status": "varchar, 50",
+      "user_id": "int, 11, foreign_key(user)",
+      "customer_id": "int, 11, foreign_key(customer)",
+      "address_id": "int, 11, foreign_key(address)"
+    },
+    "order_meta": {
+      "meta_key": "varchar, 255, available_values(_addition, _discount, _shipping, _delivery)",
+      "meta_value": "longtext",
+      "order_id": "int, 11, foreign_key(order)",
+      "meta": {
+        "_addition": "int",
+        "_discount": "int",
+        "_shipping": "int",
+        "_delivery": "?"
+      }
+    },
+    "order_items": {
+      "price": "bigint, 11",
+      "count": "bigint, 11",
+      "discount": "longtext, json({type: 'percent', amount: 0})",
+      "type": "varchar, 20",
+      "status": "varchar, 50",
+      "product_id": "int, 11, foreign_key(product)",
+      "order_id": "int, 11, foreign_key(order)"
+    },
+    "customer": {
+      "fullname": "varchar, 255",
+      "phone": "bigint, 11, unique",
+      "email": "varchar, 255",
+      "user_id": "int, 11, foreign_key(user)"
+    }
+  }
+}

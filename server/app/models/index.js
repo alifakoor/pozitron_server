@@ -37,6 +37,7 @@ db.order         = require("./order.models.js")(sequelize, Sequelize)
 db.ordermeta     = require("./ordermeta.models.js")(sequelize, Sequelize)
 db.orderItems    = require("./orderItems.models.js")(sequelize, Sequelize)
 db.orderItemmeta = require("./orderItemmeta.models.js")(sequelize, Sequelize)
+db.address       = require("./address.models")(sequelize, Sequelize)
 
 // association user & usermeta models
 db.user.hasMany(db.usermeta)
@@ -107,5 +108,13 @@ db.term.belongsToMany(db.product, { through: db.termRelation })
 // association product & orders models
 db.product.belongsToMany(db.order, { as: 'order', through: db.orderItems })
 db.order.belongsToMany(db.product, { as: 'items', through: db.orderItems })
+
+// association customer & address models
+db.customer.hasMany(db.address)
+db.address.belongsTo(db.customer)
+
+// association order & address models
+db.address.hasMany(db.order)
+db.order.belongsTo(db.address)
 
 module.exports = db

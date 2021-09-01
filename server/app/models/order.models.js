@@ -1,5 +1,5 @@
 module.exports = (sequelize, Sequelize) => {
-    const Order = sequelize.define("orders", {
+    return sequelize.define("orders", {
         reference_id: {
             type: Sequelize.BIGINT(11),
             unique: true
@@ -50,6 +50,4 @@ module.exports = (sequelize, Sequelize) => {
     }, {
         underscored: true,
     })
-
-    return Order
 }

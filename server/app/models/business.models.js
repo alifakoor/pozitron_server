@@ -1,5 +1,5 @@
 module.exports = (sequelize, Sequelize) => {
-    const BUSINESS = sequelize.define("business", {
+    return sequelize.define("business", {
         reference_id: {
             type: Sequelize.BIGINT(11),
             unique: true
@@ -28,5 +28,4 @@ module.exports = (sequelize, Sequelize) => {
     }, {
         underscored: true
     })
-    return BUSINESS
 }

@@ -79,7 +79,7 @@
                                         id="_customer-information-main-input-email"
                                         class="_customer-information-main-input"
                                         type="email"
-                                        v-model="currentCustomer.customer_meta._email"
+                                        v-model="currentCustomer.email"
                                     ></b-form-input>
                                 </b-col>
                             </b-row>
@@ -96,7 +96,7 @@
                                         id="_customer-information-main-input-address"
                                         class="_customer-information-main-input"
                                         type="text"
-                                        v-model="currentCustomer.customer_meta._address"
+                                        v-model="currentCustomer.address"
                                     ></b-form-input>
                                 </b-col>
                             </b-row>
@@ -113,7 +113,7 @@
                                     <b-form-textarea
                                         id="_customer-information-main-input-desc"
                                         class="_customer-information-main-input"
-                                        v-model="currentCustomer.customer_meta._description"
+                                        v-model="currentOrder.description"
                                     ></b-form-textarea>
                                 </b-col>
                             </b-row>
@@ -167,7 +167,6 @@ export default {
                     this.getCustomer()
                 }
             } else if (type === 'name') {
-                console.log(e.target)
                 this.checkNameInput(e.target.value)
                 this.createBtn = !!(this.requiredPass.phone && this.requiredPass.name)
             }
@@ -182,7 +181,7 @@ export default {
             }
         },
         getCustomer () {
-            this.currentCustomer.userId = this.currentUser.id
+            // this.currentCustomer.userId = this.currentUser.id
             this.$store.dispatch('order/getCustomer', this.currentCustomer).then(isNewCustomer => {
                 if (isNewCustomer) {
                     this.toast('شماره وارد شده در لیست مشتریان موجود نمی باشد، لطفا نام مشتری را وارد نمایید.', 'مشتری جدید', 'success')
@@ -202,7 +201,7 @@ export default {
                 const regex = new RegExp(persian[i], 'g')
                 replaceNumber = replaceNumber.replace(regex, english[i])
             }
-            return Number(replaceNumber)
+            return replaceNumber
         }
     },
     computed: {

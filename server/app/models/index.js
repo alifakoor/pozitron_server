@@ -80,21 +80,15 @@ db.user.hasMany(db.order)
 db.order.belongsTo(db.user)
 
 // association users & business models
-db.business.hasMany(db.user, {
-    foreignKey: 'business_id'
-})
+db.business.hasMany(db.user)
 db.user.belongsTo(db.business)
 
 // association business & products models
-db.business.hasMany(db.product, {
-    foreignKey: 'business_id'
-})
+db.business.hasMany(db.product)
 db.product.belongsTo(db.business)
 
 // association business & terms models
-db.business.hasMany(db.term, {
-    foreignKey: 'business_id'
-})
+db.business.hasMany(db.term)
 db.term.belongsTo(db.business)
 
 // association customers & orders models

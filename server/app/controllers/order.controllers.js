@@ -18,6 +18,7 @@ const ORDER_ITEMS = DB.orderItems
 const OrderItemMeta = DB.orderItemmeta
 const CUSTOMER = DB.customer
 const CUSTOMER_META = DB.customermeta
+const ADDRESS = DB.address
 
 /**
  * configurations
@@ -46,6 +47,75 @@ const getPureMetadata = function (metadata, key = []) {
 
 let createOrder = function () {
 
+}
+
+const creator = {
+    createAddress(address, customerId) {
+        return ADDRESS.upsert({
+            title: 'unknown',
+            address: address,
+            city: 'unknown',
+            state: 'unknown',
+            postcode: 1324678,
+            customerId: customerId
+        },{
+            returning: true
+        }).then((address) => {
+            address = address[0]
+            return address.id
+        }).catch((err) => {
+            console.log(`address not created, error: ${err}`)
+            return false
+        })
+    },
+    createOrder(userId, customerId, addressId, callback) {
+        ORDER.create({
+            order_key: '_zi_' + userId + '_' + customerId,
+            total_price: 0,
+            type: 'type_1',
+            status: 'on-hold',
+            userId: userId,
+            customerId: customerId,
+            addressId: addressId
+        }).then(async (order) => {
+            order.dataValues.order_meta = []
+            await this.createOrderMeta(order.id, (orderMeta) => {
+                order.dataValues.order_meta = _.chain(orderMeta).keyBy('meta_key').mapValues('meta_value').value()
+                callback(order)
+            })
+        }).catch(err => {
+            WINSTON.log('error', `Order Not Created: ${err}`)
+        })
+    },
+    createOrderMeta(orderId, callback) {
+        return ORDER_META.bulkCreate([
+            {
+                meta_key: '_addition',
+                meta_value: 0,
+                orderId: orderId
+            },
+            {
+                meta_key: '_discount',
+                meta_value: 0,
+                orderId: orderId
+            },
+            {
+                meta_key: '_shipping',
+                meta_value: 0,
+                orderId: orderId
+            },
+            {
+                meta_key: '_delivery',
+                meta_value: null,
+                orderId: orderId
+            }
+        ]).then((meta) => {
+            callback(meta)
+        }).catch(err => {
+            WINSTON.log('error', `Order Meta Not Created: ${err}`)
+            return false
+        })
+    }
 }
 
 exports.orders = (req, res) => {
@@ -183,7 +253,7 @@ exports.completeCart = (req, res) => {
 exports.getCustomer = async (req, res) => {
     await CUSTOMER.findOrCreate({
         where: {
-            phone: req.body.phone
+            phone: Number(req.body.phone)
         },
         defaults: {
             userId: req.body.userId
@@ -241,75 +311,29 @@ exports.getCustomer = async (req, res) => {
     }).catch(err => { WINSTON.log('error', `Customer Not Found: ${err}`) })
 }
 
-exports.createOrder = async (req, res) => {
-    CUSTOMER.update({
+exports.createOrder = (req, res) => {
+    CUSTOMER.upsert({
         fullname: req.body.fullname,
-        phone: req.body.phone
+        phone: Number(req.body.phone),
+        email: req.body.email,
+        userId: req.userId
     },{
-        where: {
-            id: req.body.id
+        returning: true
+    }).then(async (customer) => {
+        customer = customer[0]
+        let addressId = null
+
+        if (req.body.address !== null && req.body.address !== undefined && req.body.address !== "") {
+            addressId = await creator.createAddress(req.body.address, customer.id)
         }
-    }).then(updated_customer => {
-        CUSTOMER_META.bulkCreate([
-            {
-                meta_key: '_email',
-                meta_value: req.body.customer_meta._email,
-                customerId: req.body.id
-            },
-            {
-                meta_key: '_address',
-                meta_value: req.body.customer_meta._address,
-                customerId: req.body.id
-            },
-            {
-                meta_key: '_description',
-                meta_value: req.body.customer_meta._description,
-                customerId: req.body.id
-            }
-        ],{
-            updateOnDuplicate: ['meta_value']
-        }).then().catch(err => { WINSTON.log('error', `Customer Meta Not Updated: ${err}`) })
-    }).then(() => {
-        ORDER.create({
-            order_key: '_zi_' + req.body.id + '_' + req.body.userId,
-            total_price: 0,
-            type: 'type_1',
-            status: 'on-hold',
-            userId: req.body.userId,
-            customerId: req.body.id
-        }).then(created_order => {
-            ORDER_META.bulkCreate([
-                {
-                    meta_key: '_addition',
-                    meta_value: 0,
-                    orderId: created_order.dataValues.id
-                },
-                {
-                    meta_key: '_discount',
-                    meta_value: 0,
-                    orderId: created_order.dataValues.id
-                },
-                {
-                    meta_key: '_shipping',
-                    meta_value: 0,
-                    orderId: created_order.dataValues.id
-                },
-                {
-                    meta_key: '_delivery',
-                    meta_value: null,
-                    orderId: created_order.dataValues.id
-                }
-            ]).then(created_ordermeta => {
-                created_order.dataValues.order_meta = {}
-                created_ordermeta.forEach(meta => {
-                    created_order.dataValues.order_meta[meta.getDataValue('meta_key')] = meta.getDataValue('meta_value')
-                })
-                res.status(200).send({
-                    success: true,
-                    order: created_order
-                })
-            }).catch(err => { WINSTON.log('error', `Order Meta Not Created: ${err}`) })
-        }).catch(err => { WINSTON.log('error', `Order Not Created: ${err}`) })
+
+        await creator.createOrder(req.userId, customer.id, addressId, (order) => {
+            res.status(200).send({
+                success: true,
+                order: order
+            })
+        })
+
     }).catch(err => { WINSTON.log('error', `Customer Not Updated: ${err}`) })
 }
 

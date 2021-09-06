@@ -23,7 +23,7 @@ verifyToken = (req, res, next) => {
             })
         }
         req.userId = decoded.id
-        req.business = decoded.business_id
+        req.businessId = decoded.business_id
         next()
     })
 }

@@ -5,8 +5,8 @@
                 <div class="onp-panel-menu_content">
                     <div class="onp-panel-menu_content-title">
                         <router-link to="/panel">
-                            <p>Onlinenow</p>
                             <p>POS</p>
+                            <p>ZiTRON</p>
                         </router-link>
                     </div>
                     <div class="onp-panel-menu_content-ul">

@@ -2,11 +2,10 @@ const DB = require('../models')
 const USER = DB.user
 const BUSINESS = DB.business
 
-checkUserBusinessByUserId = (req, res, next) =>
-{
+checkUserBusinessByUserId = (req, res, next) => {
     BUSINESS.findOne({
         where: {
-            id: req.business
+            id: req.businessId
         }
     }).then(business => {
         if (!business) {
@@ -27,8 +26,7 @@ checkUserBusinessByUserId = (req, res, next) =>
                 })
                 return
             }
-
-            if (user.business_id !== req.business) {
+            if (user.businessId !== req.businessId) {
                 res.status(404).send({
                     message: "Request Failed! your business is different"
                 })

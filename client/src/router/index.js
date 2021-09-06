@@ -128,13 +128,9 @@ router.beforeEach((to, from, next) => {
     const publicPages = ['/login', '/register']
     const authRequired = !publicPages.includes(to.path)
     const user = JSON.parse(sessionStorage.getItem('user'))
-    console.log(to.path, user)
     if (authRequired && !user) {
         next('/login')
     } else {
-        // if (to.path === '/') {
-        //     next('/panel')
-        // }
         next()
     }
 })

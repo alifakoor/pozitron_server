@@ -8,11 +8,8 @@ const emptyCustomer = () => {
     return {
         fullname: null,
         phone: null,
-        customer_meta: {
-            _email: null,
-            _address: null,
-            _description: null
-        }
+        email: null,
+        address: null
     }
 }
 
@@ -26,7 +23,8 @@ const emptyCurrentOrder = () => {
             shipping: 0,
             delivery: null
         },
-        outOfStock: null
+        outOfStock: null,
+        description: null
     }
 }
 
@@ -40,7 +38,7 @@ const state = {
     prevCarts: null,
     customer: emptyCustomer(),
     currentOrder: emptyCurrentOrder(),
-    prevOrders: false,
+    prevOrders: [],
     inPaymentOrder: {
         details: null,
         items: null,

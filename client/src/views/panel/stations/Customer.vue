@@ -181,7 +181,6 @@ export default {
             }
         },
         getCustomer () {
-            // this.currentCustomer.userId = this.currentUser.id
             this.$store.dispatch('order/getCustomer', this.currentCustomer).then(isNewCustomer => {
                 if (isNewCustomer) {
                     this.toast('شماره وارد شده در لیست مشتریان موجود نمی باشد، لطفا نام مشتری را وارد نمایید.', 'مشتری جدید', 'success')

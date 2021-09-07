@@ -59,7 +59,7 @@ exports.signin = (req, res) => {
                 message: "Invalid Password."
             })
 
-        let token = jwt.sign({ id: user.id, business_id: user.business_id }, config.secret, {
+        let token = jwt.sign({ id: user.id, business_id: user.businessId }, config.secret, {
             expiresIn: TOKEN_EXPIRATION_DURATION // 24 hours
         })
 

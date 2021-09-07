@@ -434,31 +434,31 @@ export default {
                 if (this.filter.length && this.filter[0].length) {
                     let result = []
                     let titles = []
-                    let sku = []
+                    let barcode = []
                     this.filter.forEach((filter) => {
                         if (filter.length) {
                             if (!result.length) {
                                 titles = items.filter(item => {
                                     return item.title.toLowerCase().indexOf(filter) !== -1
                                 })
-                                sku = items.filter(item => {
-                                    return item.sku.toLowerCase().indexOf(filter) !== -1
+                                barcode = items.filter(item => {
+                                    return item.barcode.toLowerCase().indexOf(filter) !== -1
                                 })
                             } else {
                                 titles = result.filter(item => {
                                     return item.title.toLowerCase().indexOf(filter) !== -1
                                 })
-                                sku = result.filter(item => {
-                                    return item.sku.toLowerCase().indexOf(filter) !== -1
+                                barcode = result.filter(item => {
+                                    return item.barcode.toLowerCase().indexOf(filter) !== -1
                                 })
                             }
                             if (titles.length) {
                                 result = titles
                             } else {
-                                result = sku
+                                result = barcode
                             }
-                            if (titles.length && sku.length) {
-                                titles.concat(sku)
+                            if (titles.length && barcode.length) {
+                                titles.concat(barcode)
                                 result.concat(titles)
                             }
                         }

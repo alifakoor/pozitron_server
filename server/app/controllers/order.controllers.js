@@ -45,10 +45,6 @@ const getPureMetadata = function (metadata, key = []) {
     return result
 }
 
-let createOrder = function () {
-
-}
-
 const creator = {
     createAddress(address, customerId) {
         return ADDRESS.upsert({
@@ -208,6 +204,10 @@ exports.saveCart = (req, res) => {
 
 exports.getPreviousOrders = (req, res) => {
     ORDER.findAll({
+        where: {
+            userId: req.userId,
+            status: 'on-hold'
+        },
         include: [{
             model: ORDER_META
         },{
@@ -215,20 +215,17 @@ exports.getPreviousOrders = (req, res) => {
             as: 'items',
             include: [ { model: PRODUCT_META } ]
         },{
-            model: CUSTOMER,
-            include: [{
-                model: CUSTOMER_META
-            }]
-        }],
-        where: {
-            userId: req.userId,
-            status: 'on-hold'
-        }
+            model: CUSTOMER
+        }]
     }).then(orders => {
-        orders.forEach(order => {
-            order.dataValues.order_meta = _.chain(order.order_meta).keyBy('meta_key').mapValues('meta_value').value()
+        orders.map(order => {
+            let temp = {}
+            order.order_meta.map(function(meta){
+                temp[meta.meta_key] = Number(meta.meta_value)
+            })
+            order.setDataValue('order_meta', temp)
             order.dataValues.customer.dataValues.customer_meta = _.chain(order.customer.customer_meta).keyBy('meta_key').mapValues('meta_value').value()
-            order.items.forEach(item => {
+            order.items.map(item => {
                 item.dataValues.product_meta = _.chain(item.product_meta).keyBy('meta_key').mapValues('meta_value').value()
             })
         })
@@ -251,67 +248,25 @@ exports.completeCart = (req, res) => {
 }
 
 exports.getCustomer = async (req, res) => {
-    await CUSTOMER.findOrCreate({
+    await CUSTOMER.findOne({
         where: {
             phone: Number(req.body.phone)
-        },
-        defaults: {
-            userId: req.body.userId
-        },
-        include: [
-            {
-                model: CUSTOMER_META,
-                as: 'customer_meta'
-            }
-        ]
-    }).then(created_customer => {
-        let customer = created_customer[0]
-        if (customer._options.isNewRecord) {
-            CUSTOMER_META.bulkCreate([
-                {
-                    meta_key: '_email',
-                    meta_value: null,
-                    customerId: customer.dataValues.id
-                },
-                {
-                    meta_key: '_address',
-                    meta_value: null,
-                    customerId: customer.dataValues.id
-                },
-                {
-                    meta_key: '_description',
-                    meta_value: null,
-                    customerId: customer.dataValues.id
-                }
-            ]).then(created_customermeta => {
-                customer.dataValues.customer_meta = {}
-                created_customermeta.forEach(meta => {
-                    customer.dataValues.customer_meta[meta.getDataValue('meta_key')] = meta.getDataValue('meta_value')
-                })
-                return customer
-            }).then(customer => {
-                res.status(200).send({
-                    success: true,
-                    isNewCustomer: true,
-                    customer
-                })
-            }).catch(err => { WINSTON.log('error', `Customer Meta Not Created: ${err}`) })
-        } else {
-            let customermeta = customer.dataValues.customer_meta
-            customer.dataValues.customer_meta = {}
-            customermeta.forEach(meta => {
-                customer.dataValues.customer_meta[meta.getDataValue('meta_key')] = meta.getDataValue('meta_value')
-            })
+        }
+    }).then(customer => {
+        if (!customer) {
             res.status(200).send({
-                success: true,
-                isNewCustomer: false,
-                customer
+                success: false
             })
         }
+        res.status(200).send({
+            success: true,
+            customer
+        })
     }).catch(err => { WINSTON.log('error', `Customer Not Found: ${err}`) })
 }
 
 exports.createOrder = (req, res) => {
+    console.log(req)
     CUSTOMER.upsert({
         fullname: req.body.fullname,
         phone: Number(req.body.phone),

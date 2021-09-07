@@ -93,8 +93,10 @@ const actions = {
         return axios.post(API_URL + 'get_customer', data, { headers: authHeader() }).then((res) => {
             if (res.data.success) {
                 commit('setCustomer', res.data.customer)
-                return res.data.isNewCustomer
+                return false
             }
+            commit('nullCurrentCustomerName')
+            return true
         })
     },
     createOrder ({ commit }, data) {
@@ -147,6 +149,7 @@ const mutations = {
         state.prevOrders = orders
     },
     setCustomer (state, customer) {
+        customer.phone = '0' + customer.phone
         state.customer = customer
     },
     setCurrentOrder (state, order) {
@@ -244,15 +247,10 @@ const mutations = {
         }
     },
     nullCurrentCustomer (state) {
-        state.customer = {
-            fullname: null,
-            phone: null,
-            customer_meta: {
-                _email: null,
-                _address: null,
-                _description: null
-            }
-        }
+        Object.assign(state.customer, emptyCustomer())
+    },
+    nullCurrentCustomerName (state) {
+        state.customer.fullname = null
     },
     removeOrderFromPreviousOrders (state, id) {
         state.prevOrders = state.prevOrders.filter(order => {

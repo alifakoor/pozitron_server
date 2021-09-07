@@ -171,7 +171,7 @@
                     <b-row class="onp-panel-detail_cart-plus">
                         <b-col>
                             <div
-                                :class="`_cart-plus ` + [orderMeta.addition.value ? 'has-cals':''] + [orderMeta.addition.open ? ' open-op':'']"
+                                :class="`_cart-plus ` + [currentOrder.order_meta._addition ? 'has-cals':''] + [orderMeta.addition.open ? ' open-op':'']"
                             >
                                 <b-button
                                     :pressed.sync="orderMeta.addition.open"
@@ -191,7 +191,6 @@
                                         min="0"
                                         v-model="currentOrder.order_meta._addition"
                                         :formatter="toEnglish"
-                                        @keyup="setPluses($event, 'addition')"
                                     ></b-form-input>
                                     <span> هـ.ت</span>
                                 </div>
@@ -211,7 +210,7 @@
                         </b-col>
                         <b-col>
                             <div
-                                :class="`_cart-plus ` + [orderMeta.discount.step ? 'has-cals':''] + [orderMeta.discount.open ? ' open-op':'']"
+                                :class="`_cart-plus ` + [currentOrder.order_meta._discount ? 'has-cals':''] + [orderMeta.discount.open ? ' open-op':'']"
                             >
                                 <b-button
                                     :pressed.sync="orderMeta.discount.open"
@@ -228,7 +227,6 @@
                                         class="_cart-plus-cash-input"
                                         min="0"
                                         v-model="currentOrder.order_meta._discount"
-                                        @keyup="setPluses($event, 'discount')"
                                         :formatter="toEnglish"
                                     ></b-form-input>
                                     <span> هـ.ت</span>
@@ -259,7 +257,7 @@
                         </b-col>
                         <b-col>
                             <div
-                                :class="`_cart-plus ` + [orderMeta.shipping.value ? 'has-cals':''] + [orderMeta.shipping.open ? ' open-op':'']"
+                                :class="`_cart-plus ` + [currentOrder.order_meta._shipping ? 'has-cals':''] + [orderMeta.shipping.open ? ' open-op':'']"
                             >
                                 <b-button
                                     :pressed.sync="orderMeta.shipping.open"
@@ -277,7 +275,6 @@
                                         min="0"
                                         v-model="currentOrder.order_meta._shipping"
                                         :formatter="toEnglish"
-                                        @keyup="setPluses($event, 'shipping')"
                                     ></b-form-input>
                                     <span> هـ.ت</span>
                                 </div>
@@ -335,6 +332,7 @@ import Customer from './Customer.vue'
 import Products from './Products.vue'
 import Payment from './Payment.vue'
 import { mapState } from 'vuex'
+
 export default {
     components: {
         Customer,
@@ -471,25 +469,7 @@ export default {
         },
         loadOrder (order) {
             this.$store.commit('order/setCustomer', order.customer)
-            // const currentOrder = {
-            //     details: {
-            //         createdAt: order.createdAt,
-            //         customerId: order.customerId,
-            //         id: order.id,
-            //         order_key: order.order_key,
-            //         status: order.status,
-            //         total_price: order.total_price,
-            //         type: order.type,
-            //         updatedAt: order.updatedAt,
-            //         userId: order.userId
-            //     },
-            //     meta: {
-            //         addition: parseInt(order.order_meta._addition),
-            //         discount: parseInt(order.order_meta._discount),
-            //         shipping: parseInt(order.order_meta._shipping),
-            //         delivery: order.order_meta._delivery
-            //     }
-            // }
+            console.log(order)
             this.$store.commit('order/setCurrentOrder', order)
             order.items.forEach((item) => {
                 const helper = {
@@ -552,8 +532,7 @@ export default {
             }
             case 'discount': {
                 const totalPrice = this.currentOrder.details.total_price
-                const discountVal = Math.round(((100000 * val) / totalPrice) * 100) / 100
-                this.orderMeta.discount.value = discountVal
+                this.orderMeta.discount.value = Math.round(((100000 * val) / totalPrice) * 100) / 100
                 this.$store.commit('order/setDiscount', val)
                 break
             }
@@ -593,13 +572,7 @@ export default {
             return this.$store.getters['order/getInPaymentOrder']
         },
         activePaymentButton () {
-            if (this.currentOrder.details == null) {
-                return false
-            }
-            return true
-            // else {
-            //     return this.currentOrder.details.total_price !== 0
-            // }
+            return this.currentOrder.details != null
         },
         totalPrice () {
             const order = this.currentOrder

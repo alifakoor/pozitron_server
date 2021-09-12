@@ -80,6 +80,8 @@
                                         class="_customer-information-main-input"
                                         type="email"
                                         v-model="currentCustomer.email"
+                                        @keyup="checkInput($event, 'email')"
+                                        :state="requiredPass.email"
                                     ></b-form-input>
                                 </b-col>
                             </b-row>
@@ -144,10 +146,6 @@ export default {
                 address: null,
                 description: null
             },
-            // requiredPass: {
-            //     phone: null,
-            //     name: null
-            // },
             createBtn: false
         }
     },
@@ -169,6 +167,8 @@ export default {
             } else if (type === 'name') {
                 this.checkNameInput(e.target.value)
                 this.createBtn = !!(this.requiredPass.phone && this.requiredPass.name)
+            } else if (type === 'email') {
+                this.checkEmailInput(e.target.value)
             }
         },
         checkPhoneInput (value) {
@@ -178,6 +178,16 @@ export default {
         checkNameInput (value) {
             if (value) {
                 this.requiredPass.name = value.length > 0
+            } else {
+                this.requiredPass.name = null
+            }
+        },
+        checkEmailInput (value) {
+            if (value) {
+                const pattern = new RegExp('\\S+@\\S+\\.\\S+')
+                this.requiredPass.email = pattern.test(value)
+            } else {
+                this.requiredPass.email = null
             }
         },
         getCustomer () {
@@ -217,11 +227,9 @@ export default {
         currentCustomer: {
             handler (newValue, oldValue) {
                 if (newValue.fullname) {
-                    // this.checkPhoneInput(newValue.phone)
                     this.checkNameInput(newValue.fullname)
                 } else {
-                    // this.requiredPass.phone = false
-                    this.requiredPass.name = false
+                    this.requiredPass.name = null
                 }
                 this.createBtn = !!(this.requiredPass.phone && this.requiredPass.name)
             },

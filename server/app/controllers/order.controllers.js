@@ -266,7 +266,6 @@ exports.getCustomer = async (req, res) => {
 }
 
 exports.createOrder = (req, res) => {
-    console.log(req)
     CUSTOMER.upsert({
         fullname: req.body.fullname,
         phone: Number(req.body.phone),

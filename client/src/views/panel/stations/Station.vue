@@ -150,6 +150,7 @@
                                     <b-form-input
                                         v-model.number="item.discount.amount"
                                         :formatter="toEnglish"
+                                        @keyup="checkDiscountPerItem($event, item)"
                                         type="text"
                                         min="0"
                                         class="bg-secondary text-light border border-dark w-25 ml-2"
@@ -227,6 +228,7 @@
                                         class="_cart-plus-cash-input"
                                         min="0"
                                         v-model="currentOrder.order_meta._discount"
+                                        @keyup="checkTotalDiscount($event)"
                                         :formatter="toEnglish"
                                     ></b-form-input>
                                     <span> هـ.ت</span>
@@ -274,6 +276,7 @@
                                         class="_cart-plus-cash-input"
                                         min="0"
                                         v-model="currentOrder.order_meta._shipping"
+                                        @keyup="checkTotalShipping($event)"
                                         :formatter="toEnglish"
                                     ></b-form-input>
                                     <span> هـ.ت</span>
@@ -469,7 +472,6 @@ export default {
         },
         loadOrder (order) {
             this.$store.commit('order/setCustomer', order.customer)
-            console.log(order)
             this.$store.commit('order/setCurrentOrder', order)
             order.items.forEach((item) => {
                 const helper = {
@@ -503,20 +505,22 @@ export default {
             })
         },
         plusShipping () {
-            this.orderMeta.shipping.value += this.orderMeta.shipping.step
-            this.$store.commit('order/setShipping', this.orderMeta.shipping.value)
+            if ((this.currentOrder.order_meta._shipping * 1000) < this.currentOrder.details.total_price) {
+                this.currentOrder.order_meta._shipping += this.orderMeta.shipping.step
+                // this.$store.commit('order/setShipping', this.orderMeta.shipping.value)
+            }
         },
         minusShipping () {
-            if (this.orderMeta.shipping.value > 0) {
-                this.orderMeta.shipping.value -= this.orderMeta.shipping.step
-                this.$store.commit('order/setShipping', this.orderMeta.shipping.value)
+            if (this.currentOrder.order_meta._shipping > 0) {
+                this.currentOrder.order_meta._shipping -= this.orderMeta.shipping.step
+                // this.$store.commit('order/setShipping', this.orderMeta.shipping.value)
             }
         },
         plusDiscount () {
-            this.totalPercentDiscount = ++this.orderMeta.discount.step
+            if (this.totalPercentDiscount < 100) this.totalPercentDiscount = ++this.orderMeta.discount.step
         },
         minusDiscount () {
-            this.totalPercentDiscount = --this.orderMeta.discount.step
+            if (this.totalPercentDiscount > 0) this.totalPercentDiscount = --this.orderMeta.discount.step
         },
         setPluses (e, type) {
             let val = 0
@@ -559,15 +563,36 @@ export default {
                 }
             }
             return Number(replaceNumber)
+        },
+        checkDiscountPerItem (value, item) {
+            if (item.discount.type === 'percent') {
+                if (item.discount.amount > 100) {
+                    item.discount.amount = 100
+                }
+            }
+            if (item.discount.type === 'cash') {
+                if ((item.discount.amount * 1000) > item.price) {
+                    item.discount.amount = (item.price / 1000)
+                }
+            }
+        },
+        checkTotalDiscount (e) {
+            const value = Number(e.target.value)
+            if ((value * 1000) > this.currentOrder.details.total_price) {
+                this.currentOrder.order_meta._discount = this.currentOrder.details.total_price / 1000
+            }
+        },
+        checkTotalShipping (e) {
+            const value = Number(e.target.value)
+            if ((value * 1000) > this.currentOrder.details.total_price) {
+                this.currentOrder.order_meta._shipping = this.currentOrder.details.total_price / 1000
+            }
         }
     },
     computed: {
         currentCustomer () {
             return this.$store.getters['order/getCustomer']
         },
-        // prevOrders () {
-        //     return this.$store.getters['order/getPrevOrders']
-        // },
         inPaymentOrder () {
             return this.$store.getters['order/getInPaymentOrder']
         },

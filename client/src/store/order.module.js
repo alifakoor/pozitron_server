@@ -31,7 +31,8 @@ const emptyCurrentOrder = () => {
 const state = {
     requiredPass: {
         phone: null,
-        name: null
+        name: null,
+        email: null
     },
     orders: null,
     savedCart: null,

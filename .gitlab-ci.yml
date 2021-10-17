@@ -44,6 +44,6 @@ deploy to dev server:
         - ssh-keyscan $SERVER_IP >> ~/.ssh/known_hosts
         - chmod 644 ~/.ssh/known_hosts
     script:
-        - scp -r server gitlab@pozitronet.ir/var/www/html/dev.pozitron/server
+        - scp -r server $SERVER_USER@$SERVER_IP:/var/www/html/dev.pozitron/server
         - echo "App successfully deployed."
 

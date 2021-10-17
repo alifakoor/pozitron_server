@@ -1,51 +1,10 @@
 cache:
     paths:
-        - client/node_modules/
         - server/node_modules/
 
 stages:
-    - build
-    - client_app_tests
     - server_app_tests
     - deploy
-
-build client app:
-    image: node:latest
-    stage: build
-    only:
-        - dev
-    script:
-        - echo "Men at work..."
-        - cd client
-        - npm install
-        - unset CI
-        - npm run build
-        - echo "Done."
-    artifacts:
-        expire_in: 1 week
-        paths:
-            - dist
-
-client app unit tests:
-    image: node:latest
-    stage: client_app_tests
-    only:
-        - dev
-    script:
-        - echo "Running unit tests for the client app ..."
-        - cd client
-        - sleep 10
-        - echo "Unit tests for the client app were successfully passed."
-
-client app lint tests:
-    image: node:latest
-    stage: client_app_tests
-    only:
-        - dev
-    script:
-        - echo "Running lint command for the client app ..."
-        - sleep 10
-        - echo "No lint issues found."
 
 server app unit tests:
     image: node:latest
@@ -76,12 +35,15 @@ deploy to dev server:
         - dev
     before_script:
         - echo "Deploying app on dev.pozitronet.ir ..."
-        - "which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )"
+        - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
         - eval $(ssh-agent -s)
-        - ssh-add <(echo "$SSH_PRIVATE_KEY")
         - mkdir -p ~/.ssh
-        - echo "App successfully deployed."
+        - chmod 700 ~/.ssh
+        - echo "$SSH_PRIVATE_KEY" >> ~/.ssh/id_ed25519
+        - chmod 600 ~/.ssh/id_ed25519
+        - ssh-keyscan $SERVER_IP >> ~/.ssh/known_hosts
+        - chmod 644 ~/.ssh/known_hosts
     script:
-        - scp -r client/dist gitlab@pozitronet.ir/var/www/html/dev.pozitron/client
-        - scp -r server/app gitlab@pozitronet.ir/var/www/html/dev.pozitron/server
+        - scp -r server gitlab@pozitronet.ir/var/www/html/dev.pozitron/server
+        - echo "App successfully deployed."
 

@@ -10,29 +10,29 @@ server app unit tests:
     image: node:latest
     stage: server_app_tests
     only:
-        - master
+        - dev
     script:
         - echo "Running unit tests for server app ..."
         - cd server
-        - sleep 1
+        - sleep 10
         - echo "Unit tests for the server app were successfully passed."
 
 server app lint tests:
     image: node:latest
     stage: server_app_tests
     only:
-        - master
+        - dev
     script:
         - echo "Running lint command for the server app ..."
         - cd server
-        - sleep 1
+        - sleep 10
         - echo "No lint issues found."
 
 deploy to dev server:
     image: ubuntu
     stage: deploy
     only:
-        - master
+        - dev
     before_script:
         - echo "Deploying app on dev.pozitronet.ir ..."
         - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
@@ -44,6 +44,6 @@ deploy to dev server:
         - ssh-keyscan $SERVER_IP >> ~/.ssh/known_hosts
         - chmod 644 ~/.ssh/known_hosts
     script:
-        - ssh $SERVER_USER@$SERVER_IP "cd /var/www/pozitronet.ir && git pull origin master"
+        - scp -r server $SERVER_USER@$SERVER_IP:/var/www/dev.pozitronet.ir/server
         - echo "App successfully deployed."
 

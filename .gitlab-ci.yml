@@ -14,7 +14,7 @@ server app unit tests:
     script:
         - echo "Running unit tests for server app ..."
         - cd server
-        - sleep 10
+        - sleep 1
         - echo "Unit tests for the server app were successfully passed."
 
 server app lint tests:
@@ -25,7 +25,7 @@ server app lint tests:
     script:
         - echo "Running lint command for the server app ..."
         - cd server
-        - sleep 10
+        - sleep 1
         - echo "No lint issues found."
 
 deploy to dev server:
@@ -44,9 +44,7 @@ deploy to dev server:
         - ssh-keyscan $SERVER_IP >> ~/.ssh/known_hosts
         - chmod 644 ~/.ssh/known_hosts
     script:
-        - ssh $SERVER_USER@$SERVER_IP
-        - cd /var/www/dev.pozitronet.ir/server
-        - ls -l
+        - ssh $SERVER_USER@$SERVER_IP "cd /var/www/dev.pozitronet.ir && ls -l"
         # - scp -r server $SERVER_USER@$SERVER_IP:/var/www/dev.pozitronet.ir/server
         - echo "App successfully deployed."
 

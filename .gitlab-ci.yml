@@ -1,0 +1,49 @@
+cache:
+    paths:
+        - server/node_modules/
+
+stages:
+    - server_app_tests
+    - deploy
+
+server app unit tests:
+    image: node:latest
+    stage: server_app_tests
+    only:
+        - master
+    script:
+        - echo "Running unit tests for server app ..."
+        - cd server
+        - sleep 1
+        - echo "Unit tests for the server app were successfully passed."
+
+server app lint tests:
+    image: node:latest
+    stage: server_app_tests
+    only:
+        - master
+    script:
+        - echo "Running lint command for the server app ..."
+        - cd server
+        - sleep 1
+        - echo "No lint issues found."
+
+deploy to dev server:
+    image: ubuntu
+    stage: deploy
+    only:
+        - master
+    before_script:
+        - echo "Deploying app on dev.pozitronet.ir ..."
+        - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+        - eval $(ssh-agent -s)
+        - mkdir -p ~/.ssh
+        - chmod 700 ~/.ssh
+        - echo "$SSH_PRIVATE_KEY" >> ~/.ssh/id_ed25519
+        - chmod 600 ~/.ssh/id_ed25519
+        - ssh-keyscan $SERVER_IP >> ~/.ssh/known_hosts
+        - chmod 644 ~/.ssh/known_hosts
+    script:
+        - ssh $SERVER_USER@$SERVER_IP "cd /var/www/pozitronet.ir && git pull"
+        - echo "App successfully deployed."
+

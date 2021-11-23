@@ -1,8 +1,9 @@
 const db = require("../models")
-const config = require("../config/auth.config.js")
+// const config = require("../config/auth.config.js")
 const USER = db.user
 const BUSINESS = db.business
 
+const SECRET_KEY = 'This is Secret Key'
 const TOKEN_EXPIRATION_DURATION = 86400
 
 let jwt = require("jsonwebtoken")
@@ -59,7 +60,7 @@ exports.signin = (req, res) => {
                 message: "Invalid Password."
             })
 
-        let token = jwt.sign({ id: user.id, business_id: user.businessId }, config.secret, {
+        let token = jwt.sign({ id: user.id, business_id: user.businessId }, SECRET_KEY, {
             expiresIn: TOKEN_EXPIRATION_DURATION // 24 hours
         })
 

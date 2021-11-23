@@ -3,10 +3,10 @@ const bodyParser = require("body-parser")
 const cors = require("cors")
 
 const app = express()
-const corsOptions = {
-    origin: ["http://pozitron.local", "http://localhost:8080"]
-}
-app.use(cors(corsOptions))
+// const corsOptions = {
+//     origin: ["http://pozitron.local", "http://localhost:8080"]
+// }
+// app.use(cors(corsOptions))
 
 const httpServer = require("http").createServer(app)
 

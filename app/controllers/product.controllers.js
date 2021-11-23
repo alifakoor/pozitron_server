@@ -24,7 +24,7 @@ winston.configure({
 // winston.log('info', 'Now my debug messages are written to console!')
 
 /** Woocommerce Rest API **/
-const wc_api = require('../config/wc.config')
+// const wc_api = require('../config/wc.config')
 // const Woocommerce = require("@woocommerce/woocommerce-rest-api").default
 
 const getSpecialMetaData = function (metadata, key = []) {

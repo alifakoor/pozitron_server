@@ -1,5 +1,4 @@
 const db = require("../models")
-const config = require("../config/auth.config.js")
 const Term = db.term
 const TermMeta = db.termmeta
 

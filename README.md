@@ -5,8 +5,8 @@ Server-Side of the Pozitron (an Online Point of Sales)
 # Setup Database
 ### Create Config Folder
 - create a <code>config</code> folder in <code>app</code> folder
-- create <code>db.config.js</code> file in <code>config</code> folder
-- put these code in the <code>db.config.js</code> file (for mysql database): 
+- create <code>config.js</code> file in <code>config</code> folder
+- put these code in the <code>config.js</code> file (for mysql database): 
 ```javascript
 module.exports = {
       HOST: "localhost",

@@ -1,6 +1,6 @@
 cache:
     paths:
-        - server/node_modules/
+        - node_modules/
 
 stages:
     - server_app_tests
@@ -13,7 +13,6 @@ server app unit tests:
         - dev
     script:
         - echo "Running unit tests for server app ..."
-        - cd server
         - sleep 10
         - echo "Unit tests for the server app were successfully passed."
 
@@ -24,7 +23,6 @@ server app lint tests:
         - dev
     script:
         - echo "Running lint command for the server app ..."
-        - cd server
         - sleep 10
         - echo "No lint issues found."
 

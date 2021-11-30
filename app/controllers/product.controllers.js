@@ -7,7 +7,7 @@ const _ = require('lodash')
  * Models
  */
 const db = require("../models")
-// const config = require("../config/auth.config.js")
+// const db = require("../db/auth.index.js")
 const Op = db.Sequelize.Op
 const PRODUCT = db.product
 const PRODUCT_META = db.productmeta
@@ -24,7 +24,7 @@ winston.configure({
 // winston.log('info', 'Now my debug messages are written to console!')
 
 /** Woocommerce Rest API **/
-// const wc_api = require('../config/wc.config')
+// const wc_api = require('../db/wc.db')
 // const Woocommerce = require("@woocommerce/woocommerce-rest-api").default
 
 const getSpecialMetaData = function (metadata, key = []) {

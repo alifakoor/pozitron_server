@@ -2,7 +2,7 @@
  * Requirements
  */
 const DB = require("../models")
-// const WC_API = require('../config/wc.config')
+// const WC_API = require('../db/wc.db')
 const WINSTON = require('winston')
 const _ = require('lodash')
 

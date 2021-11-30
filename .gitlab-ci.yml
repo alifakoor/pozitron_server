@@ -44,6 +44,6 @@ deploy to dev server:
         - ssh-keyscan $SERVER_IP >> ~/.ssh/known_hosts
         - chmod 644 ~/.ssh/known_hosts
     script:
-        - ssh $SERVER_USER@$SERVER_IP "cd /var/www/pozitronet.ir && git pull origin master"
+        - ssh $SERVER_USER@$SERVER_IP "cd /var/www/dev.pozitronet.ir && git pull origin master"
         - echo "App successfully deployed."
 

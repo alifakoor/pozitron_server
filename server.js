@@ -17,7 +17,7 @@ require('./app/routes')(app)
 
 db.sequelize
     .sync({
-        // force: true,
+        force: true,
         logging: false
     })
     .then(() => {

@@ -1,8 +1,8 @@
 module.exports = {
     HOST: "localhost",
-    USER: "root",
-    PASS: "83*mtd!FHKGkB~7A",
-    DB: "proton",
+    USER: "DB_USER",
+    PASS: "DB_PASS",
+    DB: "DB_NAME",
     dialect: "mysql",
     pool: {
         max: 5, // maximum number of connection in pool

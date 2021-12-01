@@ -48,3 +48,4 @@ db.sequelize
 // })
 
 // some changes for test
+// some another changes for test

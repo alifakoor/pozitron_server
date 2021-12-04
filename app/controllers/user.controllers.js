@@ -3,32 +3,43 @@ const db = require('../db')
 const smsHelper = require('../helpers/sms.helpers')
 
 function loginOrRegister(req, res) {
-    smsHelper.send(req.body.phone, (result, code) => {
-        if (typeof result.data === 'number') {
+    smsHelper.send(req.body.phone, (smsRes, code) => {
+        if (smsRes.status === 200 && typeof smsRes.data === 'number') {
             db.user
                 .upsert({
                     phone: req.body.phone,
                     code: code,
                     codeCreatedAt: new Date()
-                }, {
-                    returning: true
                 })
-                .then(result => {
-                    const [ user, created ] = result
-                    user.setDataValue('created', created)
-                    res.status(200).json({
-                        status: 'success',
-                        message: 'code sent successfully.',
-                        data: user
-                    })
+                .then(row => {
+                    const [ user, created ] = row
+                    user.setDataValue('existed', !created)
+                    // user.setDataValue('code', null)
+                    user.setDataValue('codeCreatedAt', null)
+                    return user
+                })
+                .then(user => {
+                    user.countBusinesses()
+                        .then(counter => {
+                            user.setDataValue('hasBusiness', !!counter)
+                            res.status(200).json({
+                                success: true,
+                                message: 'code sent successfully.',
+                                data: user
+                            })
+                        })
+                        .catch(err => {
+                            console.log(err)
+                            res.status(500).send({ success: false, message: err.message })
+                        })
                 })
                 .catch(err => {
                     console.log(err)
-                    res.status(500).send({ status: 'failure', message: err.message })
+                    res.status(500).send({ success: false, message: err.message })
                 })
         } else {
             res.status(500).json({
-                status: 'failure',
+                success: false,
                 message: 'The code has not sent successfully, please try again.'
             })
         }
@@ -63,14 +74,14 @@ function verifyCode(req, res) {
             user.setDataValue('token', token)
 
             res.status(200).json({
-                status: 'success',
+                success: true,
                 message: 'You login successfully.',
                 data: user
             })
         })
         .catch(err => {
             console.log(err)
-            res.status(500).send({ status: 'failure', message: err.message })
+            res.status(500).send({ success: false, message: err.message })
         })
 }
 

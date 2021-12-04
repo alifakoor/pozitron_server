@@ -3,13 +3,13 @@ const db = require('../db')
 
 function checkPhone(req, res, next) {
     if (!req.body.phone) {
-        res.status(400).json({ status: 'failure', message: 'The phone field is required.'})
+        res.status(400).json({ success: false, message: 'The phone field is required.'})
     } else {
         // regex for persian phone numbers
         let regex = new RegExp(/^(\+98?)?{?(0?9[0-9]{9}}?)$/, 'g')
         let checkPhone = regex.test(req.body.phone)
         if (!checkPhone) {
-            res.status(400).json({ status: 'failure', message: 'The phone is not correct.' })
+            res.status(400).json({ success: false, message: 'The phone is not correct.' })
         } else {
             next()
         }
@@ -18,10 +18,10 @@ function checkPhone(req, res, next) {
 
 function checkCode(req, res, next) {
     if (!req.body.code) {
-        res.status(400).json({ status: 'failure', message: 'The code field is required.'})
+        res.status(400).json({ success: false, message: 'The code field is required.'})
     } else {
         if (req.body.code < 1000 || req.body.code > 9999) {
-            res.status(400).json({ status: 'failure', message: `${req.body.code} is not correct.`})
+            res.status(400).json({ success: false, message: `${req.body.code} is not correct.`})
         } else {
             next()
         }
@@ -32,12 +32,12 @@ function verifyToken(req, res, next) {
     let token = req.headers["zi-access-token"]
 
     if (!token) {
-        return res.status(403).json({ status: 'failure', message: "No token provided." })
+        return res.status(403).json({ success: false, message: "No token provided." })
     }
 
     jwt.verify(token, 'SECRET_KEY', (err, decoded) => {
         if (err) {
-            return res.status(401).json({ status: 'failure', message: "Unauthorized!" })
+            return res.status(401).json({ success: false, message: "Unauthorized!" })
         }
         // const date = new Date()
         // if (Math.floor(date.getTime() / 1000) > decoded.exp){

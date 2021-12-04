@@ -1,8 +1,8 @@
 const db = require('../db')
 
 function create(req, res) {
-    console.log(req.body.domain)
-    console.log(req.user.id)
+    // console.log(req.body)
+    // console.log(req.user.id)
     db.business
         .findOne({
             where: {
@@ -16,24 +16,26 @@ function create(req, res) {
             db.business
                 .create({
                     domain: req.body.domain,
+                    key: req.body.key,
+                    secret: req.body.secret,
                     userId: req.user.id
                 })
                 .then(created => {
                     if (!created) throw new Error('Something is wrong, please try again.')
                     res.status(200).json({
-                        status: 'success',
+                        success: true,
                         message: 'The business is created.',
                         data: created
                     })
                 })
                 .catch(err => {
                     console.log(err)
-                    res.status(404).json({ status: 'failure', message: err.message })
+                    res.status(404).json({ success: false, message: err.message })
                 })
         })
         .catch(err => {
             console.log(err.message)
-            res.status(404).json({ status: 'failure', message: err.message })
+            res.status(404).json({ success: false, message: err.message })
         })
 }
 

@@ -1,24 +1,30 @@
+'use strict'
+
 module.exports = (sequelize, DataTypes) => {
-    return sequelize.define('userMeta', {
-        metaKey: {
-            type: DataTypes.STRING,
+    return sequelize.define('productImage', {
+        src: {
+            type: DataTypes.TEXT,
+            allowNull: false,
+            validate: {
+                isUrl: true
+            }
+        },
+        name: {
+            type: DataTypes.STRING(150),
             allowNull: false,
             validate: {
                 notEmpty: true
             }
         },
-        metaValue: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-            validate: {
-                notEmpty: true
-            }
+        index: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
         }
     }, {
         indexes: [
             {
                 unique: true,
-                fields: ['metaKey', 'userId']
+                fields: ['src', 'productId']
             }
         ]
     })

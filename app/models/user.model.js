@@ -54,9 +54,11 @@ module.exports = (sequelize, DataTypes) => {
 
     // associations
     user.associate = function(db) {
+        // between user and user meta
         db.user.hasMany(db.userMeta)
         db.userMeta.belongsTo(db.user)
 
+        // between user and business
         db.user.hasMany(db.business)
         db.business.belongsTo(db.user)
     }

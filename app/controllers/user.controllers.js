@@ -69,11 +69,8 @@ function verifyCode(req, res) {
                 throw new Error('The code has expired.')
             }
 
-            let [business] = await user.getBusinesses()
-
             let token = jwt.sign({
-                user,
-                businessId: business.id
+                user
             }, 'SECRET_KEY', { expiresIn: 86400 })
 
             user.setDataValue('token', token)

@@ -53,7 +53,7 @@ function verifyCode(req, res) {
                 phone: req.body.phone
             }
         })
-        .then(user => {
+        .then(async user => {
             if (!user || !user.code) {
                 throw new Error('The phone or code not found.')
             }
@@ -69,7 +69,12 @@ function verifyCode(req, res) {
                 throw new Error('The code has expired.')
             }
 
-            let token = jwt.sign({user}, 'SECRET_KEY', { expiresIn: 86400 })
+            let [business] = await user.getBusinesses()
+
+            let token = jwt.sign({
+                user,
+                businessId: business.id
+            }, 'SECRET_KEY', { expiresIn: 86400 })
 
             user.setDataValue('token', token)
 
@@ -81,7 +86,7 @@ function verifyCode(req, res) {
         })
         .catch(err => {
             console.log(err)
-            res.status(500).send({ success: false, message: err.message })
+            res.status(400).send({ success: false, message: err.message })
         })
 }
 

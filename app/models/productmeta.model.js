@@ -1,5 +1,7 @@
+'use strict'
+
 module.exports = (sequelize, DataTypes) => {
-    return sequelize.define('userMeta', {
+    return sequelize.define('productmeta', {
         metaKey: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -18,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
         indexes: [
             {
                 unique: true,
-                fields: ['metaKey', 'userId']
+                fields: ['metaKey', 'productId']
             }
         ]
     })

@@ -6,7 +6,7 @@ const { Sequelize, DataTypes, Op } = require('sequelize')
 const config = require('./config')
 
 const modelsPath = path.join(`${__dirname}/../models`)
-const db = {}
+const db = { Op: Op }
 
 db.sequelize = new Sequelize(config.DB, config.USER, config.PASS, {
     host: config.HOST,

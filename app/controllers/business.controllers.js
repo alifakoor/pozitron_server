@@ -1,18 +1,92 @@
+'use strict'
+
+// database instance
 const db = require('../db')
 
-function create(req, res) {
-    // console.log(req.body)
-    // console.log(req.user.id)
-    db.business
-        .findOne({
-            where: {
-                domain: req.body.domain
-            }
+// woocommerce helper
+const WcHelpers = require('../helpers/wc.helpers')
+
+// functions
+function getMeta(wcProduct, productId) {
+    let productMeta = []
+    if (wcProduct.weight?.length) {
+        productMeta.push({
+            metaKey: 'weight',
+            metaValue: wcProduct.weight,
+            productId
         })
-        .then(business => {
-            if (business) {
-                throw new Error('The business has already existed.')
-            }
+    }
+    if (wcProduct.dimensions.length || wcProduct.dimensions.width || wcProduct.dimensions.height) {
+        productMeta.push({
+            metaKey: 'dimensions',
+            metaValue: JSON.stringify(wcProduct.dimensions),
+            productId
+        })
+    }
+    if (wcProduct.attributes.length) {
+        productMeta.push({
+            metaKey: 'attributes',
+            metaValue: JSON.stringify(wcProduct.attributes),
+            productId
+        })
+    }
+    if (wcProduct._links?.self) {
+        productMeta.push({
+            metaKey: 'links',
+            metaValue: JSON.stringify(wcProduct._links.self),
+            productId
+        })
+    }
+    return productMeta
+}
+function getImages(wcProduct, productId) {
+    let productImages = []
+    if (wcProduct.images?.length) {
+        for (const img of wcProduct.images) {
+            productImages.push({
+                src: img.src,
+                name: img.name,
+                productId
+            })
+        }
+    }
+    return productImages
+}
+async function insertProductToDB(product, businessId, parentId = null) {
+    const [ createdProduct ] = await db.product.upsert({
+        ref: product.id,
+        name: product.name,
+        barcode: product.sku,
+        type: product.type,
+        status: product.status,
+        onlinePrice: product.price,
+        onlineSalePrice: product.sale_price,
+        infiniteStock: !product.manage_stock,
+        onlineStock: product.stock_quantity,
+        description: product.description,
+        businessId,
+        parentId
+    })
+    console.log(createdProduct)
+    console.log(createdProduct.id)
+    if (!createdProduct) {
+        return false
+    } else {
+        let productMeta = getMeta(product, createdProduct.id)
+        await db.productmeta.bulkCreate(productMeta, {
+            updateOnDuplicate: ['metaValue']
+        })
+        let productImages = getImages(product, createdProduct.id)
+        await db.productImage.bulkCreate(productImages, {
+            updateOnDuplicate: ['src', 'name']
+        })
+        return createdProduct
+    }
+}
+function create(req, res) {
+    const wc = new WcHelpers(`https://${req.body.domain}`, req.body.key, req.body.secret)
+    wc.check(checked => {
+        if (checked) {
             db.business
                 .create({
                     domain: req.body.domain,
@@ -20,25 +94,49 @@ function create(req, res) {
                     secret: req.body.secret,
                     userId: req.user.id
                 })
-                .then(created => {
-                    if (!created) throw new Error('Something is wrong, please try again.')
-                    res.status(200).json({
-                        success: true,
-                        message: 'The business is created.',
-                        data: created
-                    })
+                .then(async business => {
+                    const { products, variations } = await wc.getAllProducts()
+                    let done = true
+                    for (const product of products) {
+                        let createdProduct = await insertProductToDB(product, business.id)
+                        if (!createdProduct) {
+                            done = false
+                            break
+                        }
+                        if (product.type === 'variable') {
+                            for (const id of product.variations) {
+                                const variation = variations.find(v => v.id === id)
+                                let createdVariation = await insertProductToDB(variation, business.id, createdProduct.id)
+                                if (!createdVariation) {
+                                    done = false
+                                    break
+                                }
+                            }
+                        }
+                        if (!done) break
+                    }
+
+                    if (done) {
+                        res.status(200).json({
+                            success: true,
+                            message: 'The products have loaded successfully.'
+                        })
+                    } else {
+                        res.status(200).json({
+                            success: false,
+                            message: 'The products have not loaded successfully.'
+                        })
+                    }
                 })
                 .catch(err => {
                     console.log(err)
-                    res.status(404).json({ success: false, message: err.message })
+                    res.status(500).json({ success: false, message: err.message })
                 })
-        })
-        .catch(err => {
-            console.log(err.message)
-            res.status(404).json({ success: false, message: err.message })
-        })
+        } else {
+            res.status(200).json({ success: false, message: 'The domain or keys are not correct' })
+        }
+    })
 }
-
 function check(req, res) {
     db.business
         .findOne({
@@ -47,18 +145,21 @@ function check(req, res) {
             }
         })
         .then(business => {
+            let existed = false
+            let message = 'The domain does not exist.'
             if (business) {
-                res.status(200).json({ status: 'success', message: 'The domain exist.' })
-            } else {
-                throw new Error('The domain does not exist.')
+                existed = true
+                message = 'The domain exist.'
             }
+            res.status(200).json({ success: true, existed, message })
         })
         .catch(err => {
             console.log(err.message)
-            res.status(404).json({ status: 'failure', message: err.message })
+            res.status(500).json({ status: 'failure', message: err.message })
         })
 }
 
+// export controller
 module.exports = {
     create,
     check

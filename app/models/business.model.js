@@ -1,13 +1,14 @@
 'use strict'
 
 module.exports = (sequelize, DataTypes) => {
-    return sequelize.define('business', {
+    const business =  sequelize.define('business', {
         domain: {
             type: DataTypes.STRING(200),
             allowNull: false,
             unique: true,
             validate: {
-                is: /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/i
+                // is: /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/i
+                isUrl: true
             }
         },
         title: DataTypes.STRING(150),
@@ -26,4 +27,12 @@ module.exports = (sequelize, DataTypes) => {
         },
         status: DataTypes.BOOLEAN
     })
+
+    business.associate = function(db) {
+        // between product and business
+        db.business.hasMany(db.product)
+        db.product.belongsTo(db.business)
+    }
+
+    return business
 }

@@ -10,4 +10,5 @@ module.exports = (app) => {
 
     require('./auth.api')(app, prefix)
     require('./business.api')(app, prefix)
+    require('./product.api')(app, prefix)
 }

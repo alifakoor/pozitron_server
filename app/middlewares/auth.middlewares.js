@@ -47,7 +47,6 @@ function verifyToken(req, res, next) {
         //     })
         // }
         req.user = decoded.user
-        req.businessId = decoded.businessId
         next()
     })
 }

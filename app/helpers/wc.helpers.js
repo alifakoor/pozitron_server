@@ -15,7 +15,7 @@ class WcHelpers {
         })
     }
     check(callback) {
-        this.api.get('')
+        this.api.get('system_status')
             .then(res => {
                 if (res.status === 200 && res.statusText === 'OK') {
                     callback(true)
@@ -23,7 +23,7 @@ class WcHelpers {
             })
             .catch(error => {
                 console.log(`wc helper error: ${error}`)
-                callback(true)
+                callback(false)
             })
     }
     async getAllProducts() {

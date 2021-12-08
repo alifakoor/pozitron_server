@@ -60,7 +60,7 @@ async function insertProductToDB(product, businessId, parentId = null) {
         type: product.type,
         status: product.status,
         onlinePrice: product.price,
-        onlineSalePrice: product.sale_price,
+        onlineSalePrice: product.sale_price || 0,
         infiniteStock: !product.manage_stock,
         onlineStock: product.stock_quantity,
         description: product.description,

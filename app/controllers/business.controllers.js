@@ -59,7 +59,7 @@ async function insertProductToDB(product, businessId, parentId = null) {
         barcode: product.sku,
         type: product.type,
         status: product.status,
-        onlinePrice: product.price,
+        onlinePrice: product.price || 0,
         onlineSalePrice: product.sale_price || 0,
         infiniteStock: !product.manage_stock,
         onlineStock: product.stock_quantity,
@@ -67,8 +67,6 @@ async function insertProductToDB(product, businessId, parentId = null) {
         businessId,
         parentId
     })
-    console.log(createdProduct)
-    console.log(createdProduct.id)
     if (!createdProduct) {
         return false
     } else {

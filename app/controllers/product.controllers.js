@@ -17,16 +17,11 @@ function getAll(req, res) {
                     .findAll({
                         where: {
                             type: {
-                                [db.Op.in]: ['simple', 'variable']
+                                [db.Op.in]: ['simple', 'variation']
                             },
                             businessId: business.id
                         },
                         include: [
-                            {
-                                model: db.product,
-                                as: 'variations',
-                                include: [{ model: db.productmeta, as: 'meta' }]
-                            },
                             {
                                 model: db.productmeta,
                                 as: 'meta'
@@ -36,13 +31,6 @@ function getAll(req, res) {
                                 as: 'images',
                                 required: false
                             }
-                        ],
-                        order: [
-                            [
-                                { model: db.product, as: 'variations' },
-                                'id',
-                                'ASC'
-                            ]
                         ]
                     })
                     .then(products => {

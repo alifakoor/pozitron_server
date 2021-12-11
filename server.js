@@ -1,13 +1,18 @@
 // Modules
 const express = require('express')
-const bodyParser = require('body-parser')
+const cors = require("cors")
 const db = require('./app/db')
 
 const app = express()
 const port = process.env.PORT || 8081
 
-app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: true }))
+const corsOptions = {
+    origin: ["https://dev.pozitronet.ir", "http://localhost:8080", "http://localhost:3000"]
+}
+app.use(cors(corsOptions))
+
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 
 // APIs - version 1
 require('./app/api/v1')(app)
@@ -35,12 +40,6 @@ db.sequelize
 
 // statics files
 // app.use(express.static('app/statics'))
-
-// const cors = require("cors")
-// const corsOptions = {
-//     origin: ["http://pozitron.local", "http://localhost:8080"]
-// }
-// app.use(cors(corsOptions))
 
 // const httpServer = require("http").createServer(app)
 // httpServer.listen(PORT, () => {

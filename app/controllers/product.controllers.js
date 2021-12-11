@@ -122,9 +122,47 @@ async function edit(req, res) {
         message: 'The products have NOT been updated successfully.'
     })
 }
+async function remove(req, res) {
+    const business = await db.business.findOne({where: {userId: req.user.id}})
+    const wc = new WcHelpers(`https://${business.domain}`, business.key, business.secret)
+    let done = true
+
+    for (const id of req.body.ids) {
+        const product = await db.product.findByPk(id)
+        if (!product) continue
+        if (product.type === 'simple') {
+            const updated = await wc.deleteProduct(product.ref)
+            if (!updated) {
+                done = false
+                break
+            }
+        }
+        if (product.type === 'variation') {
+            const parent = await db.product.findByPk(product.parentId)
+            const updated = await wc.deleteProductVariation(product.ref, parent.ref)
+            if (!updated) {
+                done = false
+                break
+            }
+        }
+        product.destroy()
+    }
+
+    if (done) {
+        return res.json({
+            success: true,
+            message: 'The products have been deleted successfully.'
+        })
+    }
+    return res.json({
+        success: false,
+        message: 'The products have NOT been deleted successfully.'
+    })
+}
 
 // export controller
 module.exports = {
     getAll,
-    edit
+    edit,
+    remove
 }

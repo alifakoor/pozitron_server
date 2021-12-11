@@ -111,6 +111,24 @@ class WcHelpers {
                 console.log(err.response.data)
             })
     }
+    async deleteProduct(id) {
+        return this.api.delete(`products/${id}`, { force: true })
+            .then(res => {
+                return res.status === 200 && res.statusText === 'OK'
+            })
+            .catch(err => {
+                console.log(err.response.data)
+            })
+    }
+    async deleteProductVariation(id, parentId) {
+        return this.api.delete(`products/${parentId}/variations/${id}`)
+            .then(res => {
+                return res.status === 200 && res.statusText === 'OK'
+            })
+            .catch(err => {
+                console.log(err.response.data)
+            })
+    }
 }
 
 // export helper

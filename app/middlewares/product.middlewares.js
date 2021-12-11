@@ -30,7 +30,14 @@ function checkBulkEditReq(req, res, next) {
     }
     next()
 }
+function checkBulkRemoveReq(req, res, next) {
+    if (!Array.isArray(req.body.ids) || !req.body.ids?.length) {
+        return res.status(200).json({ success: false, message: 'The list of ids is not correct' })
+    }
+    next()
+}
 
 module.exports = {
-    checkBulkEditReq
+    checkBulkEditReq,
+    checkBulkRemoveReq
 }

@@ -61,8 +61,37 @@ function getAll(req, res) {
             res.status(500).send({ success: false, message: 'user business not found.' })
         })
 }
+function edit(req, res) {
+    db.product
+        .update(req.body.fields, {
+            where: {
+                id: req.body.ids
+            }
+        })
+        .then(rows => {
+            let [count] = rows
+            if (!count) {
+                return res.json({
+                    success: false,
+                    message: 'No Product has been updated, please check your ids list.'
+                })
+            }
+            return res.json({
+                success: true,
+                message: 'Products have been updated successfully.'
+            })
+        })
+        .catch(err => {
+            console.log(err)
+            res.json({
+                success: false,
+                message: 'Products have NOT been updated successfully.'
+            })
+        })
+}
 
 // export controller
 module.exports = {
-    getAll
+    getAll,
+    edit
 }

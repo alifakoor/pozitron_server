@@ -3,6 +3,9 @@
 // database instance
 const db = require('../db')
 
+// woocommerce helper
+const WcHelpers = require('../helpers/wc.helpers')
+
 // functions
 function getAll(req, res) {
     db.business
@@ -61,33 +64,63 @@ function getAll(req, res) {
             res.status(500).send({ success: false, message: 'user business not found.' })
         })
 }
-function edit(req, res) {
-    db.product
-        .update(req.body.fields, {
-            where: {
-                id: req.body.ids
-            }
+async function edit(req, res) {
+    const { price, salePrice, stock, onlinePrice, onlineSalePrice, onlineStock, onlineSell } = req.body.fields
+    const business = await db.business.findOne({where: {userId: req.user.id}})
+    const wc = new WcHelpers(`https://${business.domain}`, business.key, business.secret)
+
+    let done = true
+    for (const id of req.body.ids) {
+        const product = await db.product.findByPk(id)
+        if (!product) continue
+        await product.update({
+            price,
+            salePrice,
+            stock,
+            onlinePrice,
+            onlineSalePrice,
+            onlineStock,
+            onlineSell,
+            infiniteStock: !stock
         })
-        .then(rows => {
-            let [count] = rows
-            if (!count) {
-                return res.json({
-                    success: false,
-                    message: 'No Product has been updated, please check your ids list.'
-                })
-            }
-            return res.json({
-                success: true,
-                message: 'Products have been updated successfully.'
+        if (product.type === 'simple') {
+            const updated = await wc.updateProduct({
+                id: product.ref,
+                onlinePrice: product.onlinePrice,
+                onlineSalePrice: product.onlineSalePrice,
+                onlineStock: product.onlineStock
             })
-        })
-        .catch(err => {
-            console.log(err)
-            res.json({
-                success: false,
-                message: 'Products have NOT been updated successfully.'
+            if (!updated) {
+                done = false
+                break
+            }
+        }
+        if (product.type === 'variation') {
+            const parent = await db.product.findByPk(product.parentId)
+            const updated = await wc.updateProductVariation({
+                id: product.ref,
+                parentId: parent.ref,
+                onlinePrice: product.onlinePrice,
+                onlineSalePrice: product.onlineSalePrice,
+                onlineStock: product.onlineStock
             })
+            if (!updated) {
+                done = false
+                break
+            }
+        }
+    }
+
+    if (done) {
+        return res.json({
+            success: true,
+            message: 'The products have been updated successfully.'
         })
+    }
+    return res.json({
+        success: false,
+        message: 'The products have NOT been updated successfully.'
+    })
 }
 
 // export controller

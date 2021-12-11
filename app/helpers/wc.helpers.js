@@ -81,6 +81,36 @@ class WcHelpers {
             variations
         }
     }
+    async updateProduct({id, onlinePrice, onlineSalePrice, onlineStock}) {
+        const data = {
+            regular_price: onlinePrice.toString(),
+            sale_price: onlineSalePrice.toString(),
+            stock_quantity: onlineStock
+        }
+
+        return this.api.put(`products/${id}`, data)
+            .then(res => {
+                return res.status === 200 && res.statusText === 'OK'
+            })
+            .catch(err => {
+                console.log(err.response.data)
+            })
+    }
+    async updateProductVariation({id, parentId, onlinePrice, onlineSalePrice, onlineStock}) {
+        const data = {
+            regular_price: onlinePrice.toString(),
+            sale_price: onlineSalePrice.toString(),
+            stock_quantity: onlineStock
+        }
+
+        return this.api.put(`products/${parentId}/variations/${id}`, data)
+            .then(res => {
+                return res.status === 200 && res.statusText === 'OK'
+            })
+            .catch(err => {
+                console.log(err.response.data)
+            })
+    }
 }
 
 // export helper

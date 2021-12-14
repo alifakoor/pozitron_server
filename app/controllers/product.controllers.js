@@ -65,24 +65,23 @@ function getAll(req, res) {
         })
 }
 async function edit(req, res) {
-    const { price, salePrice, stock, onlinePrice, onlineSalePrice, onlineStock, onlineSell } = req.body.fields
+    const { price, discount, stock, onlinePrice, onlineDiscount, onlineStock, onlineSell } = req.body.fields
     const business = await db.business.findOne({where: {userId: req.user.id}})
     const wc = new WcHelpers(`https://${business.domain}`, business.key, business.secret)
 
     let done = true
     for (const id of req.body.ids) {
+
         const product = await db.product.findByPk(id)
         if (!product) continue
+
+        await product.update({ price, discount, stock, onlinePrice, onlineDiscount, onlineStock, onlineSell })
         await product.update({
-            price,
-            salePrice,
-            stock,
-            onlinePrice,
-            onlineSalePrice,
-            onlineStock,
-            onlineSell,
-            infiniteStock: !stock
+            salePrice: Math.floor(product.price - (product.price * product.discount) / 100),
+            onlineSalePrice: Math.floor(product.onlinePrice - (product.onlinePrice * product.onlineDiscount) / 100),
+            infiniteStock: (stock !== undefined) ? false : product.infiniteStock
         })
+
         if (product.type === 'simple') {
             const updated = await wc.updateProduct({
                 id: product.ref,

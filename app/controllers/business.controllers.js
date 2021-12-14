@@ -59,10 +59,11 @@ async function insertProductToDB(product, businessId, parentId = null) {
         barcode: product.sku,
         type: product.type,
         status: product.status,
-        onlinePrice: product.price || 0,
+        onlinePrice: product.regular_price || 0,
+        onlineDiscount: (product.regular_price && product.sale_price) ? Math.floor(((product.regular_price - product.sale_price) * 100) / product.regular_price) : 0,
         onlineSalePrice: product.sale_price || 0,
         infiniteStock: !product.manage_stock,
-        onlineStock: product.stock_quantity,
+        onlineStock: product.stock_quantity || 0,
         description: product.description,
         businessId,
         parentId

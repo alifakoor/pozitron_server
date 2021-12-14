@@ -42,6 +42,14 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.BIGINT(15),
             defaultValue: 0,
         },
+        discount: {
+            type: DataTypes.INTEGER(3),
+            defaultValue: 0,
+            validate: {
+                min: 0,
+                max: 100
+            }
+        },
         salePrice: {
             type: DataTypes.BIGINT(15),
             defaultValue: 0
@@ -49,6 +57,14 @@ module.exports = (sequelize, DataTypes) => {
         onlinePrice: {
             type: DataTypes.BIGINT(15),
             defaultValue: 0
+        },
+        onlineDiscount: {
+            type: DataTypes.INTEGER(3),
+            defaultValue: 0,
+            validate: {
+                min: 0,
+                max: 100
+            }
         },
         onlineSalePrice: {
             type: DataTypes.BIGINT(15),

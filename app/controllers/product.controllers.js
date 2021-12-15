@@ -67,13 +67,15 @@ function getAll(req, res) {
 async function edit(req, res) {
     const { price, discount, stock, onlinePrice, onlineDiscount, onlineStock, onlineSell } = req.body.fields
     const business = await db.business.findOne({where: {userId: req.user.id}})
+    if (!business) return res.json({ success: false, message: 'The business does not exist.' })
+
     const wc = new WcHelpers(`https://${business.domain}`, business.key, business.secret)
 
     let done = true
     for (const id of req.body.ids) {
 
         const product = await db.product.findByPk(id)
-        if (!product) continue
+        if (!product?.businessId !== business.id) continue
 
         await product.update({ price, discount, stock, onlinePrice, onlineDiscount, onlineStock, onlineSell })
         await product.update({
@@ -123,12 +125,15 @@ async function edit(req, res) {
 }
 async function remove(req, res) {
     const business = await db.business.findOne({where: {userId: req.user.id}})
+    if (!business) return res.json({ success: false, message: 'The business does not exist.' })
+
     const wc = new WcHelpers(`https://${business.domain}`, business.key, business.secret)
     let done = true
 
     for (const id of req.body.ids) {
         const product = await db.product.findByPk(id)
-        if (!product) continue
+        if (!product?.businessId !== business.id) continue
+
         if (product.type === 'simple') {
             const updated = await wc.deleteProduct(product.ref)
             if (!updated) {

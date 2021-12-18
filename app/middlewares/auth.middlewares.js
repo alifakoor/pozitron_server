@@ -79,7 +79,20 @@ function checkDomainAndKeys(req, res, next) {
 
     next()
 }
+function verifyWebhook(req, res, next) {
+    if (!req.params.businessId || !req.params.businessKey) {
+        return res.status(200).json({ success: false, message: 'The business id and key are required.' })
+    }
 
+    // regex for validation consumer key
+    let regexKey = new RegExp(/^(ck_)(.+)/, 'gi')
+    let checkKey = regexKey.test(req.params.businessKey)
+    if (!checkKey) {
+        return res.status(200).json({ success: false, message: 'The consumer key is not correct.' })
+    }
+
+    next()
+}
 
 
 // checkBusinessExist = (req, res, next) => {
@@ -124,5 +137,6 @@ module.exports = {
     checkPhone,
     checkCode,
     verifyToken,
-    checkDomainAndKeys
+    checkDomainAndKeys,
+    verifyWebhook
 }

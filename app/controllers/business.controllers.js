@@ -128,25 +128,19 @@ async function create(req, res) {
 	}
 }
 function check(req, res) {
-	db.business
-			.findOne({
-				where: {
-					domain: req.params.domain
-				}
-			})
-			.then(business => {
-				let existed = false
-				let message = 'The domain does not exist.'
-				if (business) {
-					existed = true
-					message = 'The domain exist.'
-				}
-				res.status(200).json({ success: true, existed, message })
-			})
-			.catch(err => {
-				console.log(err.message)
-				res.status(500).json({ status: 'failure', message: err.message })
-			})
+	try {
+		const business = db.business.findOne({ where: { domain: req.body.domain } })
+		let existed = false
+		let message = 'The domain does not exist.'
+		if (business) {
+			existed = true
+			message = 'The domain exist.'
+		}
+		res.status(200).json({ success: true, existed, message })
+	} catch(err) {
+		console.log(err.message)
+		res.status(500).json({ status: 'failure', message: err.message })
+	}
 }
 
 // export controller

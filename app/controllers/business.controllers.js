@@ -104,9 +104,7 @@ async function create(req, res) {
 			userId: req.user.id
 		})
 
-		console.log(business.id, business.key)
-
-		await wc.createWebhooks(business.id)
+		await wc.createWebhooks(business.id, business.key)
 
 		for (const product of products) {
 			let createdProduct = await insertProductToDB(product, business.id)
@@ -127,9 +125,9 @@ async function create(req, res) {
 		return res.status(500).json({ success: false, message: err.message })
 	}
 }
-function check(req, res) {
+async function check(req, res) {
 	try {
-		const business = db.business.findOne({ where: { domain: req.body.domain } })
+		const business = await db.business.findOne({ where: { domain: req.body.domain } })
 		let existed = false
 		let message = 'The domain does not exist.'
 		if (business) {

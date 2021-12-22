@@ -1,5 +1,9 @@
 'use strict'
 
+// dependencies
+const fs = require('fs/promises')
+const path = require('path')
+
 // database instance
 const db = require('../db')
 
@@ -170,6 +174,8 @@ async function remove(req, res) {
 // handlers for webhooks action
 async function createdWithWebhook(req, res) {
 	try {
+		const date = new Date()
+		await fs.writeFile(path.join(__dirname, `../logs/${date}.txt`), JSON.stringify(req.body), 'utf-8')
 		const business = await db.business.findByPk(req.params.businessId)
 		if (business?.key !== req.params.key) {
 			return res.send({

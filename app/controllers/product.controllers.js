@@ -7,10 +7,8 @@ const path = require('path')
 // database instance
 const db = require('../db')
 
-// woocommerce helper
+// helpers
 const WcHelpers = require('../helpers/wc.helpers')
-
-// product helper
 const { calculateDiscount } = require('../helpers/product.helpers')
 
 // functions
@@ -156,7 +154,7 @@ async function remove(req, res) {
 				break
 			}
 		}
-		product.destroy()
+		await product.destroy()
 	}
 
 	if (done) {
@@ -172,37 +170,50 @@ async function remove(req, res) {
 }
 
 // handlers for webhooks action
-async function createdWithWebhook(req, res) {
+async function logWebhookResponse(webhook, body) {
 	try {
 		const date = new Date()
-		await fs.writeFile(path.join(__dirname, `../logs/${date}.txt`), JSON.stringify(req.body), 'utf-8')
-		const business = await db.business.findByPk(req.params.businessId)
-		if (business?.key !== req.params.key) {
+		const data = {
+			date,
+			webhook,
+			body
+		}
+		await fs.appendFile(path.join(__dirname, `../logs/webhooks/product/${+date}.json`), JSON.stringify(data), 'utf-8')
+	} catch(err) {
+		console.log(err)
+	}
+
+}
+async function createdWithWebhook(req, res) {
+	try {
+		await logWebhookResponse('product create', req.body)
+
+		const { businessId, businessKey } = req.params
+		const business = await db.business.findByPk(businessId)
+		if (business?.key !== businessKey) {
 			return res.send({
 				success: false,
 				message: 'Your business key is not correct.'
 			})
 		}
 
-		const product = {}
-		if (req.body.type === 'simple') {
-			product['ref'] = req.body.id
-			product['name'] = req.body.name
-			product['barcode'] = req.body.sku
-			product['type'] = req.body.type
-			product['status'] = req.body.status
-			product['onlinePrice'] = req.body.regular_price || 0
-			product['onlineDiscount'] = calculateDiscount(req.body.regular_price, req.body.sale_price)
-			product['onlineSalePrice'] = req.body.sale_price || 0
-			product['infiniteStock'] = !req.body.manage_stock
-			product['onlineStock'] = req.body.stock_quantity || 0
-			product['description'] = req.body.description
-			product['business'] = req.params.businessId
+		const product = {
+			ref: req.body.id,
+			name: req.body.name,
+			barcode: req.body.sku,
+			type: req.body.type,
+			status: req.body.status,
+			onlinePrice: req.body.regular_price || 0,
+			onlineDiscount: calculateDiscount(req.body.regular_price, req.body.sale_price),
+			onlineSalePrice: req.body.sale_price || 0,
+			infiniteStock: !req.body.manage_stock,
+			onlineStock: req.body.stock_quantity || 0,
+			description: req.body.description,
+			business: req.params.businessId
 		}
-		if (req.body.type === 'variable') {
-
+		if (req.body.type === 'product_variation') {
+			product['parentId'] = req.body.parent_id
 		}
-
 		await db.product.create(product)
 
 	} catch(err) {
@@ -216,39 +227,73 @@ async function createdWithWebhook(req, res) {
 }
 async function updatedWithWebhook(req, res) {
 	try {
-		const business = await db.business.findByPk(req.params.businessId)
-		if (business?.key !== req.params.key) {
+		await logWebhookResponse('product update', req.body)
+
+		const { businessId, businessKey } = req.params
+		const business = await db.business.findByPk(businessId)
+		if (business?.key !== businessKey) {
 			return res.send({
 				success: false,
 				message: 'Your business key is not correct.'
 			})
 		}
+		const product = await db.product.findOne({ where: { ref: req.body.id, businessId } })
+		if (!product) {
+			return res.send({
+				success: false,
+				message: 'this product not found.'
+			})
+		}
+
+		await product.update({
+			name: req.body.name,
+			barcode: req.body.sku,
+			type: req.body.type,
+			status: req.body.status,
+			onlinePrice: req.body.regular_price || 0,
+			onlineDiscount: calculateDiscount(req.body.regular_price, req.body.sale_price),
+			onlineSalePrice: req.body.sale_price || 0,
+			infiniteStock: !req.body.manage_stock,
+			onlineStock: req.body.stock_quantity,
+			description: req.body.description,
+		})
 
 	} catch(err) {
-		console.log('cannot create product through webhooks.')
+		console.log('cannot update product through webhooks.')
 		console.log(err)
 		return res.send({
 			success: false,
-			message: 'cannot create product through webhooks.'
+			message: 'cannot update product through webhooks.'
 		})
 	}
 }
 async function deletedWithWebhook(req, res) {
 	try {
-		const business = await db.business.findByPk(req.params.businessId)
-		if (business?.key !== req.params.key) {
+		await logWebhookResponse('product delete', req.body)
+
+		const { businessId, businessKey } = req.params
+		const business = await db.business.findByPk(businessId)
+		if (business?.key !== businessKey) {
 			return res.send({
 				success: false,
 				message: 'Your business key is not correct.'
 			})
 		}
+		const product = await db.product.findOne({ where: { ref: req.body.id, businessId } })
+		if (!product) {
+			return res.send({
+				success: false,
+				message: 'this product not found.'
+			})
+		}
 
+		await product.destroy()
 	} catch(err) {
-		console.log('cannot create product through webhooks.')
+		console.log('cannot delete product through webhooks.')
 		console.log(err)
 		return res.send({
 			success: false,
-			message: 'cannot create product through webhooks.'
+			message: 'cannot delete product through webhooks.'
 		})
 	}
 }

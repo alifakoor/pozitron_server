@@ -1,5 +1,5 @@
 const { authJWT, authorization } = require("../middlewares")
-const controller = require("../controllers/order.controllers.js")
+const controller = require("../controllers/orders.controllers.js")
 
 module.exports = function(app) {
     app.use(function(req, res, next) {

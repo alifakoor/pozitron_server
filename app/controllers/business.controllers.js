@@ -65,6 +65,7 @@ async function insertProductToDB(product, businessId, parentId = null) {
 			onlineSalePrice: product.sale_price || 0,
 			infiniteStock: !product.manage_stock,
 			onlineStock: product.stock_quantity || 0,
+			onlineSell: true,
 			description: product.description,
 			businessId,
 			parentId

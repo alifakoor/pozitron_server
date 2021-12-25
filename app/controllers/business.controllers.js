@@ -84,13 +84,17 @@ async function insertProductToDB(product, businessId, parentId = null) {
 		console.log(err)
 	}
 }
-async function create(req, res) {
+async function checkDomain(req, res) {
 	const wc = new WcHelpers(`https://${req.body.domain}`, req.body.key, req.body.secret)
 	const checkedWC = await wc.check()
 	if (!checkedWC) {
 		console.log('Creating Business was failed.')
 		return res.send({ success: false, message: 'The domain or keys are not correct.'})
 	}
+	return res.send({ success: true, message: 'The domain and keys are correct.' })
+}
+async function create(req, res) {
+	const wc = new WcHelpers(`https://${req.body.domain}`, req.body.key, req.body.secret)
 	const { success, products, variations } = await wc.getAllProducts()
 	if (!success) {
 		console.log('Creating Business was failed.')
@@ -145,5 +149,6 @@ async function check(req, res) {
 // export controller
 module.exports = {
 	create,
-	check
+	check,
+	checkDomain
 }

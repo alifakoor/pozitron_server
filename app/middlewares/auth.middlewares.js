@@ -61,7 +61,7 @@ function checkDomainAndKeys(req, res, next) {
 	if (!checkDomain) {
 		return res.status(200).json({ success: false, message: 'The domain is not correct.' })
 	}
-	req.body.domain = req.body.domain.replaceAll(/(https:\/\/)|(http:\/\/)|(www.)/gi, '')
+	req.body.domain = req.body.domain.replace(/(https:\/\/)|(http:\/\/)|(www.)/gi, '')
 
 	// regex for validation consumer key
 	let regexKey = new RegExp(/^(ck_)(.+)/, 'gi')

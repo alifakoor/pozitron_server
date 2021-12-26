@@ -56,7 +56,7 @@ function checkDomainAndKeys(req, res, next) {
 	}
 
 	// regex for validation domain
-	let regexDomain = new RegExp(/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/, 'gi')
+	let regexDomain = new RegExp(/[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&\/=]*)/, 'gi')
 	let checkDomain = regexDomain.test(req.body.domain)
 	if (!checkDomain) {
 		return res.status(200).json({ success: false, message: 'The domain is not correct.' })

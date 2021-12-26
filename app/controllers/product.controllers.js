@@ -9,7 +9,7 @@ const db = require('../db')
 
 // helpers
 const WcHelpers = require('../helpers/wc.helpers')
-const { calculateDiscount } = require('../helpers/product.helpers')
+const { calculateDiscount, calculateSalePrice } = require('../helpers/product.helpers')
 
 // functions
 function getAll(req, res) {
@@ -68,6 +68,43 @@ function getAll(req, res) {
 				console.log(err)
 				res.status(500).send({ success: false, message: 'user business not found.' })
 			})
+}
+async function create(req, res) {
+	try {
+		req.body["salePrice"] = calculateSalePrice(req.body.price, req.body.discount)
+		req.body["onlineSalePrice"] = calculateSalePrice(req.body.onlinePrice, req.body.onlineDiscount)
+
+		const product = await db.product.create(req.body)
+
+		if (req.body.weight) {
+			await db.productmeta.create({ metaKey: 'weight', metaValue: req.body.weight, productId: product.id })
+		}
+		if (req.body.dimensions) {
+			await db.productmeta.create({ metaKey: 'dimensions', metaValue: JSON.stringify(req.body.dimensions), productId: product.id })
+		}
+
+		if (req.body.type === 'variable') {
+			for (const variation of req.body.variations) {
+				variation["salePrice"] = calculateSalePrice(variation.price, variation.discount)
+				variation["onlineSalePrice"] = calculateSalePrice(variation.onlinePrice, variation.onlineDiscount)
+				variation["parentId"] = product.id
+
+				const createdVariation = await db.product.create(variation)
+
+				if (variation.weight) {
+					await db.productmeta.create({ metaKey: 'weight', metaValue: variation.weight, productId: createdVariation.id })
+				}
+				if (variation.dimensions) {
+					await db.productmeta.create({ metaKey: 'dimensions', metaValue: JSON.stringify(variation.dimensions), productId: createdVariation.id })
+				}
+			}
+		}
+
+		return res.json({ success: true, message: 'The product has been created successfully.', data: product })
+	} catch(err) {
+		console.log(err)
+		return res.json({ success: false, message: err.message })
+	}
 }
 async function edit(req, res) {
 	const { price, discount, stock, onlinePrice, onlineDiscount, onlineStock, onlineSell } = req.body.fields
@@ -301,6 +338,7 @@ async function deletedWithWebhook(req, res) {
 // export controller
 module.exports = {
 	getAll,
+	create,
 	edit,
 	remove,
 	createdWithWebhook,

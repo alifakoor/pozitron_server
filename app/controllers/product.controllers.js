@@ -295,11 +295,12 @@ async function createdWithWebhook(req, res) {
 			onlineSalePrice: req.body.sale_price || 0,
 			infiniteStock: !req.body.manage_stock,
 			onlineStock: req.body.stock_quantity || 0,
+			onlineSell: true,
 			description: req.body.description,
-			businessId: business.id
+			businessId
 		}
 		if (req.body.type === 'variation') {
-			const parent = await db.product.findOne({ where: { ref: req.body.parent_id } })
+			const parent = await db.product.findOne({ where: { ref: req.body.parent_id, businessId } })
 			product['parentId'] = parent.id
 		}
 
@@ -357,8 +358,9 @@ async function updatedWithWebhook(req, res) {
 			onlineSalePrice: req.body.sale_price || 0,
 			infiniteStock: !req.body.manage_stock,
 			onlineStock: req.body.stock_quantity,
+			onlineSell: true,
 			description: req.body.description,
-			businessId: business.id
+			businessId
 		}
 
 		// if (req.body.type === 'variable') {

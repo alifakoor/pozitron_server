@@ -12,6 +12,51 @@ const WcHelpers = require('../helpers/wc.helpers')
 const { calculateDiscount, calculateSalePrice } = require('../helpers/product.helpers')
 
 // functions
+function getMeta(wcProduct, productId) {
+	let productMeta = []
+	if (wcProduct.weight?.length) {
+		productMeta.push({
+			metaKey: 'weight',
+			metaValue: wcProduct.weight,
+			productId
+		})
+	}
+	if (wcProduct.dimensions.length || wcProduct.dimensions.width || wcProduct.dimensions.height) {
+		productMeta.push({
+			metaKey: 'dimensions',
+			metaValue: JSON.stringify(wcProduct.dimensions),
+			productId
+		})
+	}
+	if (wcProduct.attributes.length) {
+		productMeta.push({
+			metaKey: 'attributes',
+			metaValue: JSON.stringify(wcProduct.attributes),
+			productId
+		})
+	}
+	if (wcProduct._links?.self) {
+		productMeta.push({
+			metaKey: 'links',
+			metaValue: JSON.stringify(wcProduct._links.self),
+			productId
+		})
+	}
+	return productMeta
+}
+function getImages(wcProduct, productId) {
+	let productImages = []
+	if (wcProduct.images?.length) {
+		for (const img of wcProduct.images) {
+			productImages.push({
+				src: img.src,
+				name: img.name,
+				productId
+			})
+		}
+	}
+	return productImages
+}
 function getAll(req, res) {
 	db.business
 			.findOne({
@@ -266,7 +311,18 @@ async function createdWithWebhook(req, res) {
 		// 		productVariation.update({ parentId: parent.id })
 		// 	}
 		// }
-		await db.product.upsert(product)
+		const [createdProduct] = await db.product.upsert(product)
+
+		let productMeta = getMeta(req.body, createdProduct.id)
+		await db.productmeta.bulkCreate(productMeta, {
+			updateOnDuplicate: ['metaValue']
+		})
+		let productImages = getImages(req.body, createdProduct.id)
+		await db.productImage.bulkCreate(productImages, {
+			updateOnDuplicate: ['src', 'name']
+		})
+
+		return res.json({ success: false, message: 'The product has been created successfully. '})
 
 	} catch(err) {
 		console.log('cannot create product through webhooks.')
@@ -290,7 +346,7 @@ async function updatedWithWebhook(req, res) {
 			})
 		}
 
-		const data = {
+		const product = {
 			ref: req.body.id,
 			name: req.body.name,
 			barcode: req.body.sku,
@@ -305,18 +361,31 @@ async function updatedWithWebhook(req, res) {
 			businessId: business.id
 		}
 
-		if (req.body.type === 'variable') {
-			await db.product.upsert(data)
-		} else {
-			const product = await db.product.findOne({ where: { ref: req.body.id, businessId } })
-			if (!product) {
-				return res.send({
-					success: false,
-					message: 'this product not found.'
-				})
-			}
-			await product.update(data)
-		}
+		// if (req.body.type === 'variable') {
+		// 	await db.product.upsert(data)
+		// } else {
+		// 	const product = await db.product.findOne({ where: { ref: req.body.id, businessId } })
+		// 	if (!product) {
+		// 		return res.send({
+		// 			success: false,
+		// 			message: 'this product not found.'
+		// 		})
+		// 	}
+		// 	await product.update(data)
+		// }
+
+		const [updatedProduct] = await db.product.upsert(product)
+
+		let productMeta = getMeta(req.body, updatedProduct.id)
+		await db.productmeta.bulkCreate(productMeta, {
+			updateOnDuplicate: ['metaValue']
+		})
+		let productImages = getImages(req.body, updatedProduct.id)
+		await db.productImage.bulkCreate(productImages, {
+			updateOnDuplicate: ['src', 'name']
+		})
+
+		return res.json({ success: false, message: 'The product has been updated successfully. '})
 
 	} catch(err) {
 		console.log('cannot update product through webhooks.')

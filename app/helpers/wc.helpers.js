@@ -115,11 +115,11 @@ class WcHelpers {
 			const orderBaseUrl = 'https://api-dev.pozitronet.ir/orders/webhooks'
 			const webhooks = [
 					{ name: 'product create', topic: 'product.created', delivery_url: `${productBaseUrl}/create/${businessId}/${businessKey}` },
-					{ name: 'product update', topic: 'product.updated', delivery_url: `${productBaseUrl}/create/${businessId}/${businessKey}` },
-					{ name: 'product delete', topic: 'product.deleted', delivery_url: `${productBaseUrl}/create/${businessId}/${businessKey}` },
+					{ name: 'product update', topic: 'product.updated', delivery_url: `${productBaseUrl}/update/${businessId}/${businessKey}` },
+					{ name: 'product delete', topic: 'product.deleted', delivery_url: `${productBaseUrl}/delete/${businessId}/${businessKey}` },
 					{ name: 'order create', topic: 'order.created', delivery_url: `${orderBaseUrl}/create/${businessId}/${businessKey}` },
-					{ name: 'order update', topic: 'order.updated', delivery_url: `${orderBaseUrl}/create/${businessId}/${businessKey}` },
-					{ name: 'order delete', topic: 'order.deleted', delivery_url: `${orderBaseUrl}/create/${businessId}/${businessKey}` }
+					{ name: 'order update', topic: 'order.updated', delivery_url: `${orderBaseUrl}/update/${businessId}/${businessKey}` },
+					{ name: 'order delete', topic: 'order.deleted', delivery_url: `${orderBaseUrl}/delete/${businessId}/${businessKey}` }
 			]
 			await Promise.all([
 				await this.api.post('webhooks', webhooks[0]),

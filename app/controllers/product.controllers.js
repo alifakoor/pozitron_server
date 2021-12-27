@@ -246,9 +246,9 @@ async function createdWithWebhook(req, res) {
 			infiniteStock: !req.body.manage_stock,
 			onlineStock: req.body.stock_quantity || 0,
 			description: req.body.description,
-			business: req.params.businessId
+			business: business.id
 		}
-		if (req.body.type === 'product_variation') {
+		if (req.body.type === 'variation') {
 			product['parentId'] = req.body.parent_id
 		}
 		await db.product.create(product)

@@ -207,6 +207,11 @@ async function remove(req, res) {
 }
 
 // handlers for webhooks action
+/*
+	both createWithWebhook and updateWithWebhook for variable product are the same,
+	because in woocommerce it calls product.update webhook for a variable,
+	after publish button has been clicked, the product.create webhook work for variables
+ */
 async function logWebhookResponse(webhook, body) {
 	try {
 		const date = new Date()
@@ -261,7 +266,7 @@ async function createdWithWebhook(req, res) {
 		// 		productVariation.update({ parentId: parent.id })
 		// 	}
 		// }
-		await db.product.create(product)
+		await db.product.upsert(product)
 
 	} catch(err) {
 		console.log('cannot create product through webhooks.')
@@ -286,6 +291,7 @@ async function updatedWithWebhook(req, res) {
 		}
 
 		const data = {
+			ref: req.body.id,
 			name: req.body.name,
 			barcode: req.body.sku,
 			type: req.body.type,

@@ -3,4 +3,4 @@
 .idea/
 /app/db/config.js
 server.js
-.gitlab-ci.yml
+#.gitlab-ci.yml

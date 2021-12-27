@@ -246,11 +246,21 @@ async function createdWithWebhook(req, res) {
 			infiniteStock: !req.body.manage_stock,
 			onlineStock: req.body.stock_quantity || 0,
 			description: req.body.description,
-			business: business.id
+			businessId: business.id
 		}
 		if (req.body.type === 'variation') {
-			product['parentId'] = req.body.parent_id
+			const parent = await db.product.findOne({ where: { ref: req.body.parent_id } })
+			product['parentId'] = parent.id
 		}
+
+		// if there is some orphan variations
+		// if (req.body.type === 'variable') {
+		// 	const parent = await db.product.upsert(product)
+		// 	for (const variation of req.body.variations) {
+		// 		const productVariation = await db.product.findOne({ where: { ref: variation } })
+		// 		productVariation.update({ parentId: parent.id })
+		// 	}
+		// }
 		await db.product.create(product)
 
 	} catch(err) {
@@ -274,15 +284,8 @@ async function updatedWithWebhook(req, res) {
 				message: 'Your business key is not correct.'
 			})
 		}
-		const product = await db.product.findOne({ where: { ref: req.body.id, businessId } })
-		if (!product) {
-			return res.send({
-				success: false,
-				message: 'this product not found.'
-			})
-		}
 
-		await product.update({
+		const data = {
 			name: req.body.name,
 			barcode: req.body.sku,
 			type: req.body.type,
@@ -293,7 +296,21 @@ async function updatedWithWebhook(req, res) {
 			infiniteStock: !req.body.manage_stock,
 			onlineStock: req.body.stock_quantity,
 			description: req.body.description,
-		})
+			businessId: business.id
+		}
+
+		if (req.body.type === 'variable') {
+			await db.product.upsert(data)
+		} else {
+			const product = await db.product.findOne({ where: { ref: req.body.id, businessId } })
+			if (!product) {
+				return res.send({
+					success: false,
+					message: 'this product not found.'
+				})
+			}
+			await product.update(data)
+		}
 
 	} catch(err) {
 		console.log('cannot update product through webhooks.')

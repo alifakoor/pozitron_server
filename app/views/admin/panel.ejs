@@ -1,0 +1,30 @@
+<%- include('./common/header') %>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Phone</th>
+                <th scope="col">Domain</th>
+                <th scope="col">Created At</th>
+                <th scope="col">Updated At</th>
+            </tr>
+            </thead>
+            <tbody>
+            <% for (const user of users) {%>
+                <tr>
+                    <th scope="row">1</th>
+                    <td><%= user.phone %></td>
+                    <td><%= user.businesses[0].domain %></td>
+                    <td><%= new Date(user.createdAt).toLocaleDateString('fa-IR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) %></td>
+                    <td><%= new Date(user.updatedAt).toLocaleDateString('fa-IR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) %></td>
+                </tr>
+            <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<%- include('./common/footer') %>

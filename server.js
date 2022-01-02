@@ -1,7 +1,10 @@
 // Modules
 const express = require('express')
 const cors = require("cors")
+const cookieParser = require('cookie-parser')
+const path = require('path')
 const db = require('./app/db')
+const adminRouter = require('./app/routes/index')
 
 const app = express()
 const port = process.env.PORT || 8081
@@ -11,6 +14,10 @@ const corsOptions = {
 }
 app.use(cors(corsOptions))
 
+app.set('view engine', 'ejs')
+app.set('views', path.join(__dirname, './app/views'))
+app.use(express.static(path.join(__dirname, './app/public')))
+app.use(cookieParser())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
@@ -18,7 +25,8 @@ app.use(express.urlencoded({ extended: true }))
 require('./app/api/v1')(app)
 
 // Routes
-require('./app/routes')(app)
+// require('./app/routes')(app)
+app.use('/admin', adminRouter)
 
 db.sequelize
     .sync({

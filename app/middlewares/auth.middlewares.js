@@ -29,9 +29,17 @@ function checkCode(req, res, next) {
 		}
 	}
 }
+function checkAdminLogin(req, res, next) {
+	if(!req.body.username || !req.body.password) {
+		return res.status(406).send({ success: false, message: 'The username or password is not correct.' })
+	}
+	if(req.body.username.length < 8 || req.body.password.length < 16) {
+		return res.status(406).send({ success: false, message: 'The username or password is not correct.' })
+	}
+	next()
+}
 function verifyToken(req, res, next) {
-	let token = req.headers["zi-access-token"]
-
+	let token = req.headers["zi-access-token"] || req.cookies['zi-access-token']
 	if (!token) {
 		return res.status(403).json({ success: false, message: "No token provided." })
 	}
@@ -94,48 +102,11 @@ function verifyWebhook(req, res, next) {
 	next()
 }
 
-
-// checkBusinessExist = (req, res, next) => {
-//     BUSINESS.findOne({
-//         where:{
-//             subdomain: req.body.subdomain
-//         }
-//     }).then(business => {
-//         if (!business) {
-//             res.status(404).send({
-//                 message: "Signup Failed! business does not exist"
-//             })
-//             return
-//         }
-//         next()
-//     })
-// }
-// checkUserBusiness = (req, res, next) => {
-//     USER.findOne({
-//         where: {
-//             username: req.body.username
-//         }
-//     }).then(user => {
-//         BUSINESS.findOne({
-//             where: {
-//                 subdomain: req.body.subdomain
-//             }
-//         }).then((business) => {
-//             if (user.businessId !== business.id) {
-//                 res.status(404).send({
-//                     message: "Signin Failed! your business is different"
-//                 })
-//                 return
-//             }
-//             next()
-//         })
-//     })
-// }
-
 // export middleware
 module.exports = {
 	checkPhone,
 	checkCode,
+	checkAdminLogin,
 	verifyToken,
 	checkDomainAndKeys,
 	verifyWebhook

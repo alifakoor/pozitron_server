@@ -15,9 +15,9 @@
             <tbody>
             <% for (const user of users) {%>
                 <tr>
-                    <th scope="row">1</th>
-                    <td><%= user.phone %></td>
-                    <td><%= user.businesses[0].domain %></td>
+                    <th scope="row"><%= user.id %></th>
+                    <td><%= `0${user.phone}` %></td>
+                    <td><%= (user.businesses.length) ? user.businesses[0].domain : '-' %></td>
                     <td><%= new Date(user.createdAt).toLocaleDateString('fa-IR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) %></td>
                     <td><%= new Date(user.updatedAt).toLocaleDateString('fa-IR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) %></td>
                 </tr>

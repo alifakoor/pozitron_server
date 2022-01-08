@@ -69,6 +69,7 @@ function verifyToken(req, res, next) {
 		createdAt: "2022-01-08 12:17:27",
 		updatedAt: "2022-01-08 12:17:27"
 	}
+	next()
 }
 function checkDomainAndKeys(req, res, next) {
 	if (!req.body.domain || !req.body.key || !req.body.secret) {

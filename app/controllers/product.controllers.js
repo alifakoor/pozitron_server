@@ -91,7 +91,8 @@ function getAll(req, res) {
 									res.status(200).json({
 										success: true,
 										message: 'The list of products found successfully.',
-										data: products
+										data: products,
+										domain: business.domain
 									})
 								} else {
 									res.status(200).json({

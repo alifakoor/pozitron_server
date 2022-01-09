@@ -168,6 +168,7 @@ async function edit(req, res) {
 		await product.update({
 			salePrice: Math.floor(product.price - (product.price * product.discount) / 100),
 			onlineSalePrice: Math.floor(product.onlinePrice - (product.onlinePrice * product.onlineDiscount) / 100),
+			onlineStock: onlineSell ? product.onlineStock : 0,
 			infiniteStock: (stock !== undefined) ? false : product.infiniteStock
 		})
 

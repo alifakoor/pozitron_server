@@ -1,12 +1,16 @@
-'use strict'
+'use strict';
 
-// database instance
-const db = require('../db')
+const Business = require('../db/models/business');
+const Product = require('../db/models/product');
+const ProductMeta = require('../db/models/productmeta');
+const ProductImage = require('../db/models/productImage');
 
 // woocommerce helper
-const WcHelpers = require('../helpers/wc.helpers')
+const WcHelpers = require('../helpers/wc.helpers');
 
-// functions
+const BaseErr = require('../errors/baseErr');
+const httpStatusCodes = require('../errors/httpStatusCodes');
+
 function getMeta(wcProduct, productId) {
 	let productMeta = []
 	if (wcProduct.weight?.length) {
@@ -54,7 +58,7 @@ function getImages(wcProduct, productId) {
 }
 async function insertProductToDB(product, businessId, parentId = null) {
 	try {
-		const [createdProduct] = await db.product.upsert({
+		const [createdProduct] = await Product.upsert({
 			ref: product.id,
 			name: product.name,
 			barcode: product.sku,
@@ -69,80 +73,98 @@ async function insertProductToDB(product, businessId, parentId = null) {
 			description: product.description,
 			businessId,
 			parentId
-		})
-		let productMeta = getMeta(product, createdProduct.id)
-		await db.productmeta.bulkCreate(productMeta, {
+		});
+
+		let productMeta = getMeta(product, createdProduct.id);
+		await ProductMeta.bulkCreate(productMeta, {
 			updateOnDuplicate: ['metaValue']
-		})
-		let productImages = getImages(product, createdProduct.id)
-		await db.productImage.bulkCreate(productImages, {
+		});
+
+		let productImages = getImages(product, createdProduct.id);
+		await ProductImage.bulkCreate(productImages, {
 			updateOnDuplicate: ['src', 'name']
-		})
-		return createdProduct
-	} catch(err) {
-		console.log(`cannot insert product to DB, productId: ${product.id}`)
-		console.log(err)
-	}
-}
-async function checkDomain(req, res) {
-	const wc = new WcHelpers(`https://${req.body.domain}`, req.body.key, req.body.secret)
-	const checkedWC = await wc.check()
-	if (!checkedWC) {
-		console.log('Creating Business was failed.')
-		return res.send({ success: false, message: 'The domain or keys are not correct.'})
-	}
-	return res.send({ success: true, message: 'The domain and keys are correct.' })
-}
-async function create(req, res) {
-	const wc = new WcHelpers(`https://${req.body.domain}`, req.body.key, req.body.secret)
-	const { success, products, variations } = await wc.getAllProducts()
-	if (!success) {
-		console.log('Creating Business was failed.')
-		return res.send({ success: false, message: 'Cannot fetch products.'})
-	}
+		});
 
+		return createdProduct;
+
+	} catch(e) {
+		console.log(`cannot insert product to DB, productId: ${product.id}`);
+		console.log(e);
+	}
+}
+
+async function check(req, res, next) {
 	try {
-		const business = await db.business.create({
-			domain: req.body.domain,
-			key: req.body.key,
-			secret: req.body.secret,
-			userId: req.user.id
-		})
-
-		await wc.createWebhooks(business.id, business.key)
-
-		for (const product of products) {
-			let createdProduct = await insertProductToDB(product, business.id)
-			if (product.type === 'variable') {
-				for (const id of product.variations) {
-					const variation = variations.find(v => v.id === id)
-					await insertProductToDB(variation, business.id, createdProduct.id)
-				}
-			}
-		}
-
-		return res.status(200).json({
-			success: true,
-			message: 'The products have loaded successfully.'
-		})
-	} catch(err) {
-		console.log(err)
-		return res.status(500).json({ success: false, message: err.message })
-	}
-}
-async function check(req, res) {
-	try {
-		const business = await db.business.findOne({ where: { domain: req.body.domain } })
-		let existed = false
-		let message = 'The domain does not exist.'
+		const business = await Business.findOne({ where: { domain: req.body.domain } });
+		let existed = false;
+		let message = 'The domain does not exist.';
 		if (business) {
 			existed = true
 			message = 'The domain exist.'
 		}
-		res.status(200).json({ success: true, existed, message })
-	} catch(err) {
-		console.log(err.message)
-		res.status(500).json({ status: 'failure', message: err.message })
+
+		return res.json({ success: true, existed, message });
+	} catch(e) {
+		next(e);
+	}
+}
+async function checkDomain(req, res, next) {
+	try {
+		const wc = new WcHelpers(`https://${req.body.domain}`, req.body.key, req.body.secret);
+		const checkedWC = await wc.check();
+		if (!checkedWC) {
+			throw new BaseErr(
+				'WoocommerceNotConnected',
+				httpStatusCodes.NOT_ACCEPTABLE,
+				true,
+				`The domain or keys are not correct.`
+			);
+		}
+
+		return res.send({ success: true, message: 'The domain and keys are correct.' })
+	} catch(e) {
+		next(e);
+	}
+}
+async function create(req, res, next) {
+	try {
+		const wc = new WcHelpers(`https://${req.body.domain}`, req.body.key, req.body.secret);
+		const { success, products, variations } = await wc.getAllProducts();
+		if (!success) {
+			throw new BaseErr(
+				'WoocommerceGetProductFailed',
+				httpStatusCodes.NOT_ACCEPTABLE,
+				true,
+				`Cannot fetch products.`
+			);
+		}
+
+		const business = await Business.create({
+			domain: req.body.domain,
+			key: req.body.key,
+			secret: req.body.secret,
+			userId: req.user.id
+		});
+
+		await wc.createWebhooks(business.id, business.key);
+
+		for (const product of products) {
+			let createdProduct = await insertProductToDB(product, business.id);
+			if (product.type === 'variable') {
+				for (const id of product.variations) {
+					const variation = variations.find(v => v.id === id);
+					await insertProductToDB(variation, business.id, createdProduct.id);
+				}
+			}
+		}
+
+		return res.json({
+			success: true,
+			message: 'The products have loaded successfully.'
+		});
+
+	} catch(e) {
+		next(e);
 	}
 }
 

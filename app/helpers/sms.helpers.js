@@ -1,32 +1,62 @@
-const axios = require('axios')
+const axios = require('axios');
 
-const SMS_USER = '09380933022'
-const SMS_PASS = 'Test2424'
-const MIN_CODE = 1000
-const MAX_CODE = 9999
+// const {
+// 	SMS_URL,
+// 	SMS_USER,
+// 	SMS_PASS,
+// 	SMS_NUM,
+// 	SMS_PATTERN_CODE,
+// 	SMS_MIN_CODE,
+// 	SMS_MAX_CODE
+// } = process.env;
 
-function send(phone, callback) {
-    let code = Math.floor(Math.random() * (MAX_CODE - MIN_CODE) + MIN_CODE)
-    axios
-        .post('http://ippanel.com/api/select', {
-            "op" : 'pattern',
-            "user" : SMS_USER,
-            "pass":  SMS_PASS,
-            "fromNum": '3000505',
-            "toNum" : phone.toString(),
-            "patternCode": "9hxlb8d2or",
-            "inputData": [{
-                    "name": 'کاربر',
-                    "code": code
-            }]
-        })
-        .then(res => {
-            callback(res, code)
-        })
-        .catch(err => {
-            console.log(`sms error ====> ${err}`)
-        })
+class SmsHelpers {
+	constructor(phone) {
+		this.phone = phone.toString();
+		this.url = process.env.SMS_URL;
+		this.user = process.env.SMS_USER;
+		this.pass = process.env.SMS_PASS;
+		this.number = process.env.SMS_NUM;
+		this.pattern = process.env.SMS_PATTERN_CODE;
+		this.code = Math.floor(Math.random() * (+process.env.SMS_MAX_CODE - +process.env.SMS_MIN_CODE) + +process.env.SMS_MIN_CODE);
+	}
 
+	send() {
+		return axios
+			.post(this.url,{
+				op: 'pattern',
+				user: this.user,
+				pass:  this.pass,
+				fromNum: this.number,
+				toNum: this.phone,
+				patternCode: this.pattern,
+				inputData: [{
+					"name": 'کاربر',
+					"code": this.code
+				}]
+			});
+	}
+
+	getCode() {
+		return this.code;
+	}
 }
 
-module.exports = { send }
+function send(phone) {
+	const code = Math.floor(Math.random() * (+SMS_MAX_CODE - +SMS_MIN_CODE) + +SMS_MIN_CODE);
+	return axios
+		.post(SMS_URL,{
+			op: 'pattern',
+			user: SMS_USER,
+			pass:  SMS_PASS,
+			fromNum: SMS_NUM,
+			toNum: phone.toString(),
+			patternCode: SMS_PATTERN_CODE,
+			inputData: [{
+				"name": 'کاربر',
+				"code": code
+			}]
+		});
+}
+
+module.exports = SmsHelpers;

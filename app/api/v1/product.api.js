@@ -1,17 +1,18 @@
-// middlewares
-const { verifyToken, verifyWebhook } = require('../../middlewares/auth.middlewares')
-const { checkBulkEditReq, checkBulkRemoveReq, checkInputsBeforeCreate } = require('../../middlewares/product.middlewares')
+'use strict'
 
-// controller
-const controller = require('../../controllers/product.controllers')
+const { Router } = require('express');
+const router = Router();
 
-// export apis
-module.exports = (app, prefix) => {
-    app.get(`${prefix}/products`, verifyToken, controller.getAll)
-    app.post(`${prefix}/products/create`, [ verifyToken, checkInputsBeforeCreate ], controller.create)
-    app.put(`${prefix}/products/edit`, [ verifyToken, checkBulkEditReq ], controller.edit)
-    app.post(`${prefix}/products/remove`, [ verifyToken, checkBulkRemoveReq ], controller.remove)
-    app.post(`${prefix}/products/webhooks/create/:businessId/:businessKey`, [ verifyWebhook ], controller.createdWithWebhook)
-    app.post(`${prefix}/products/webhooks/update/:businessId/:businessKey`, [ verifyWebhook ], controller.updatedWithWebhook)
-    app.post(`${prefix}/products/webhooks/delete/:businessId/:businessKey`, [ verifyWebhook ], controller.deletedWithWebhook)
-}
+const { verifyToken, verifyWebhook } = require('../../middlewares/auth.middlewares');
+const { checkBulkEditReq, checkBulkRemoveReq, checkInputsBeforeCreate } = require('../../middlewares/product.middlewares');
+const { getAll, create, edit, remove, createdWithWebhook, updatedWithWebhook, deletedWithWebhook } = require('../../controllers/product.controllers');
+
+router.get('', verifyToken, getAll);
+router.post('/create', [ verifyToken, checkInputsBeforeCreate ], create);
+router.put('/edit', [ verifyToken, checkBulkEditReq ], edit);
+router.post('/remove', [ verifyToken, checkBulkRemoveReq ], remove);
+router.post('/webhooks/create/:businessId/:businessKey', [ verifyWebhook ], createdWithWebhook);
+router.post('/webhooks/update/:businessId/:businessKey', [ verifyWebhook ], updatedWithWebhook);
+router.post('/webhooks/delete/:businessId/:businessKey', [ verifyWebhook ], deletedWithWebhook);
+
+module.exports = router;

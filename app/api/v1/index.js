@@ -1,14 +1,11 @@
-const prefix = '/api/v1'
-module.exports = (app) => {
-    app.use((req, res, next) => {
-        res.header(
-            "Access-Control-Allow-Headers",
-            "zi-access-token, Origin, Content-Type, Accept"
-        )
-        next()
-    })
+const { Router } = require('express');
+const router = Router();
+const auth = require('./auth.api');
+const business = require('./business.api');
+const product = require('./product.api');
 
-    require('./auth.api')(app, prefix)
-    require('./business.api')(app, prefix)
-    require('./product.api')(app, prefix)
-}
+router.use('/auth', auth);
+router.use('/business', business);
+router.use('/products', product);
+
+module.exports = router;

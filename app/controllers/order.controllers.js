@@ -5,7 +5,7 @@ const fs = require('fs/promises')
 const path = require('path')
 
 // database instance
-const db = require('../db')
+const db = require('../db/conn')
 
 // helpers
 const { calculateDiscount } = require('../helpers/product.helpers')

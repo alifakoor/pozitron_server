@@ -1,4 +1,4 @@
-const { connection, types } = require('../db')
+const { connection, types } = require('../db/conn')
 const db = {}
 
 // db.Sequelize = Sequelize

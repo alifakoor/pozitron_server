@@ -1,7 +1,7 @@
 'use strict'
 
 // db
-const db = require('../db');
+const db = require('../db/conn');
 
 function isAdmin(req, res, next) {
 	if(!req.user.role || req.user.role !== 'admin') {

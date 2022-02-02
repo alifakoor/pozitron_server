@@ -111,28 +111,43 @@ class WcHelpers {
 	}
 	async createWebhooks(businessId, businessKey) {
 		try {
-			const productBaseUrl = 'https://api-dev.pozitronet.ir/products/webhooks'
-			const orderBaseUrl = 'https://api-dev.pozitronet.ir/orders/webhooks'
-			const webhooks = [
-					{ name: 'product create', topic: 'product.created', delivery_url: `${productBaseUrl}/create/${businessId}/${businessKey}` },
-					{ name: 'product update', topic: 'product.updated', delivery_url: `${productBaseUrl}/update/${businessId}/${businessKey}` },
-					{ name: 'product delete', topic: 'product.deleted', delivery_url: `${productBaseUrl}/delete/${businessId}/${businessKey}` },
-					{ name: 'order create', topic: 'order.created', delivery_url: `${orderBaseUrl}/create/${businessId}/${businessKey}` },
-					{ name: 'order update', topic: 'order.updated', delivery_url: `${orderBaseUrl}/update/${businessId}/${businessKey}` },
-					{ name: 'order delete', topic: 'order.deleted', delivery_url: `${orderBaseUrl}/delete/${businessId}/${businessKey}` }
-			]
-			await Promise.all([
-				await this.api.post('webhooks', webhooks[0]),
-				await this.api.post('webhooks', webhooks[1]),
-				await this.api.post('webhooks', webhooks[2]),
-				await this.api.post('webhooks', webhooks[3]),
-				await this.api.post('webhooks', webhooks[4]),
-				await this.api.post('webhooks', webhooks[5]),
-			])
-			return true
+			const sections = [ 'product', 'order' ];
+			const methods = [ 'create', 'update', 'delete' ];
+
+			for(const section of sections) {
+				for(const method of methods) {
+					const webhook = {
+						name: `${section} ${method}`,
+						topic: `${section}.${method}d`,
+						delivery_url: `${process.env.WCH_BASE_URL}/${section}/webhook/${method}/${businessId}/${businessKey}`
+					};
+
+					await this.api.post('webhooks', webhook);
+				}
+			}
+
+			// const productBaseUrl = `${process.env.WCH_BASE_URL}/product/webhooks`;
+			// const orderBaseUrl = `${process.env.WCH_BASE_URL}/orders/webhooks`;
+			//
+			// const webhooks = [
+			// 		{ name: 'product create', topic: 'product.created', delivery_url: `${productBaseUrl}/create/${businessId}/${businessKey}` },
+			// 		{ name: 'product update', topic: 'product.updated', delivery_url: `${productBaseUrl}/update/${businessId}/${businessKey}` },
+			// 		{ name: 'product delete', topic: 'product.deleted', delivery_url: `${productBaseUrl}/delete/${businessId}/${businessKey}` },
+			// 		{ name: 'order create', topic: 'order.created', delivery_url: `${orderBaseUrl}/create/${businessId}/${businessKey}` },
+			// 		{ name: 'order update', topic: 'order.updated', delivery_url: `${orderBaseUrl}/update/${businessId}/${businessKey}` },
+			// 		{ name: 'order delete', topic: 'order.deleted', delivery_url: `${orderBaseUrl}/delete/${businessId}/${businessKey}` }
+			// ];
+			// await this.api.post('webhooks', webhooks[0]);
+			// await this.api.post('webhooks', webhooks[1]);
+			// await this.api.post('webhooks', webhooks[2]);
+			// await this.api.post('webhooks', webhooks[3]);
+			// await this.api.post('webhooks', webhooks[4]);
+			// await this.api.post('webhooks', webhooks[5]);
+
+			return true;
 		} catch(err) {
-			console.log(`creating webhook has failed, with error:\n${err}`)
-			return false
+			console.log(`creating webhook has failed, with error:\n${err}`);
+			return false;
 		}
 	}
 }

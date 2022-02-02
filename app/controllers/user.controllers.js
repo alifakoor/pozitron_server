@@ -19,7 +19,11 @@ async function loginOrRegister(req, res, next) {
 			);
 		}
 
-		const [ user, created ] = await User.upsert({ phone: req.body.phone, code: sms.getCode() });
+		const [ user, created ] = await User.upsert({
+			phone: req.body.phone,
+			code: sms.getCode(),
+			codeCreatedAt: Date.now()
+		});
 		user.setDataValue('existed', !created);
 		user.code = null;
 		user.codeCreatedAt = null;
@@ -37,7 +41,6 @@ async function loginOrRegister(req, res, next) {
 		next(e);
 	}
 }
-
 async function verifyCode(req, res, next) {
 	try {
 		const user = await User.findOne({ where: { phone: req.body.phone }});
@@ -62,6 +65,7 @@ async function verifyCode(req, res, next) {
 		const codeCreatedAt = new Date(user.codeCreatedAt);
 		const second = Math.floor((now.getTime() - codeCreatedAt.getTime()) / 1000);
 		const codeExpiration = Number(process.env.SMS_EXPIRATION) || 60 * 60 * 24;
+		console.log(second, codeExpiration);
 		if (second >= codeExpiration) {
 			throw new BaseErr(
 				'CodeExpired',
@@ -73,7 +77,7 @@ async function verifyCode(req, res, next) {
 
 		let token = jwt.sign({
 			user
-		}, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION || 86400 });
+		}, process.env.JWT_SECRET, { expiresIn: +process.env.JWT_EXPIRATION || 86400 });
 
 		user.setDataValue('token', token);
 

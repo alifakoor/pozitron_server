@@ -128,6 +128,16 @@ async function checkDomain(req, res, next) {
 }
 async function create(req, res, next) {
 	try {
+		const existed = await Business.findOne({ where: { domain: req.body.domain }});
+		if(existed) {
+			throw new BaseErr(
+				'DomainAlreadyExisted',
+				httpStatusCodes.NOT_ACCEPTABLE,
+				true,
+				'The domain already existed.'
+			);
+		}
+
 		const wc = new WcHelpers(`https://${req.body.domain}`, req.body.key, req.body.secret);
 		const { success, products, variations } = await wc.getAllProducts();
 		if (!success) {

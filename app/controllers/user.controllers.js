@@ -65,7 +65,6 @@ async function verifyCode(req, res, next) {
 		const codeCreatedAt = new Date(user.codeCreatedAt);
 		const second = Math.floor((now.getTime() - codeCreatedAt.getTime()) / 1000);
 		const codeExpiration = Number(process.env.SMS_EXPIRATION) || 60 * 60 * 24;
-		console.log(second, codeExpiration);
 		if (second >= codeExpiration) {
 			throw new BaseErr(
 				'CodeExpired',

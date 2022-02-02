@@ -5,13 +5,13 @@ function handler(err, req, res, next) {
 	logErr(err);
 	if(!err.isOperational) {
 		returnErr({ message: 'Internal Server Error.'}, req, res, next);
-		process.exit(1);
+		// process.exit(1);
 	}
 	returnErr(err, req, res, next);
 }
 
 function logErr(err) {
-	console.error(err.stack);
+	console.error(err);
 }
 
 function returnErr(err, req, res, next) {

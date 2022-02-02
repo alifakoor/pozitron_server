@@ -1,14 +1,19 @@
 'use strict'
 
 // dependencies
-const fs = require('fs/promises')
-const path = require('path')
+const fs = require('fs/promises');
+const path = require('path');
 
-// database instance
-const db = require('../db/conn')
+// models
+const Business = require('../db/models/business');
+const Product = require('../db/models/product');
+
+// error handlers
+const BaseErr = require('../errors/baseErr');
+const httpStatusCodes = require('../errors/httpStatusCodes');
 
 // helpers
-const { calculateDiscount } = require('../helpers/product.helpers')
+const { calculateDiscount } = require('../helpers/product.helpers');
 
 // functions
 
@@ -27,115 +32,130 @@ async function logWebhookResponse(webhook, body) {
 	}
 
 }
-async function createdWithWebhook(req, res) {
+async function createdWithWebhook(req, res, next) {
 	try {
-		await logWebhookResponse('order create', req.body)
+		await logWebhookResponse('order create', req.body);
 
-		const { businessId, businessKey } = req.params
-		const business = await db.business.findByPk(businessId)
+		const { businessId, businessKey } = req.params;
+		const business = await Business.findByPk(businessId);
 		if (business?.key !== businessKey) {
-			return res.send({
-				success: false,
-				message: 'Your business key is not correct.'
-			})
+			throw new BaseErr(
+				'BusinessKeyIsNotCorrect',
+				httpStatusCodes.NOT_ACCEPTABLE,
+				true,
+				'Your business key is not correct.'
+			);
 		}
 
 		for(const item of req.body.line_items) {
-			const product = await db.product.findOne({ where: { ref: item.product_id, businessId } })
-			if (!product) return res.send({ success: false, message: 'this product not found.' })
+			const product = await Product.findOne({ where: { ref: item.product_id, businessId } });
+			if (!product) {
+				throw new BaseErr(
+					'ProductNotFound',
+					httpStatusCodes.NOT_FOUND,
+					true,
+					'This product not found.'
+				);
+			}
 
 			if (product.type === 'simple') {
-				const onlineStock = product.onlineStock - item.quantity
-				await product.update({ onlineStock })
+				const onlineStock = product.onlineStock - item.quantity;
+				await product.update({ onlineStock });
 			}
 			if (product.type === 'variable') {
-				const variation = await db.product.findOne({ where: { ref: item.variation_id, businessId } })
-				const onlineStock = variation.onlineStock - item.quantity
-				await variation.update({ onlineStock })
+				const variation = await Product.findOne({ where: { ref: item.variation_id, businessId } });
+				const onlineStock = variation.onlineStock - item.quantity;
+				await variation.update({ onlineStock });
 			}
 		}
 
-	} catch(err) {
-		console.log('cannot create order through webhooks.')
-		console.log(err)
-		return res.send({
-			success: false,
-			message: 'cannot create order through webhooks.'
-		})
+	} catch(e) {
+		console.log('cannot create order through webhooks.');
+		next(e);
 	}
 }
-async function updatedWithWebhook(req, res) {
+async function updatedWithWebhook(req, res, next) {
 	try {
-		await logWebhookResponse('order update', req.body)
+		await logWebhookResponse('order update', req.body);
 
-		const { businessId, businessKey } = req.params
-		const business = await db.business.findByPk(businessId)
+		const { businessId, businessKey } = req.params;
+		const business = await Business.findByPk(businessId);
 		if (business?.key !== businessKey) {
-			return res.send({
-				success: false,
-				message: 'Your business key is not correct.'
-			})
+			throw new BaseErr(
+				'BusinessKeyIsNotCorrect',
+				httpStatusCodes.NOT_ACCEPTABLE,
+				true,
+				'Your business key is not correct.'
+			);
 		}
 
 		for(const item of req.body.line_items) {
-			const product = await db.product.findOne({ where: { ref: item.product_id, businessId } })
-			if (!product) return res.send({ success: false, message: 'this product not found.' })
+			const product = await Product.findOne({ where: { ref: item.product_id, businessId } });
+			if (!product) {
+				throw new BaseErr(
+					'ProductNotFound',
+					httpStatusCodes.NOT_FOUND,
+					true,
+					'This product not found.'
+				);
+			}
 
 			if (product.type === 'simple') {
-				const onlineStock = product.onlineStock - item.quantity
-				await product.update({ onlineStock })
+				const onlineStock = product.onlineStock - item.quantity;
+				await product.update({ onlineStock });
 			}
 			if (product.type === 'variable') {
-				const variation = await db.product.findOne({ where: { ref: item.variation_id, businessId } })
-				const onlineStock = variation.onlineStock - item.quantity
-				await variation.update({ onlineStock })
+				const variation = await Product.findOne({ where: { ref: item.variation_id, businessId } });
+				const onlineStock = variation.onlineStock - item.quantity;
+				await variation.update({ onlineStock });
 			}
 		}
 
-	} catch(err) {
+	} catch(e) {
 		console.log('cannot update order through webhooks.')
-		console.log(err)
-		return res.send({
-			success: false,
-			message: 'cannot update order through webhooks.'
-		})
+		next(e);
 	}
 }
-async function deletedWithWebhook(req, res) {
+async function deletedWithWebhook(req, res, next) {
 	try {
-		await logWebhookResponse('order delete', req.body)
+		await logWebhookResponse('order delete', req.body);
 
-		const { businessId, businessKey } = req.params
-		const business = await db.business.findByPk(businessId)
+		const { businessId, businessKey } = req.params;
+		const business = await Business.findByPk(businessId);
 		if (business?.key !== businessKey) {
-			return res.send({
-				success: false,
-				message: 'Your business key is not correct.'
-			})
+			throw new BaseErr(
+				'BusinessKeyIsNotCorrect',
+				httpStatusCodes.NOT_ACCEPTABLE,
+				true,
+				'Your business key is not correct.'
+			);
 		}
 
 		for(const item of req.body.line_items) {
-			const product = await db.product.findOne({ where: { ref: item.product_id, businessId } })
-			if (!product) return res.send({ success: false, message: 'this product not found.' })
+			const product = await Product.findOne({ where: { ref: item.product_id, businessId } });
+			if (!product) {
+				throw new BaseErr(
+					'ProductNotFound',
+					httpStatusCodes.NOT_FOUND,
+					true,
+					'This product not found.'
+				);
+			}
 
 			if (product.type === 'simple') {
-				const onlineStock = product.onlineStock + item.quantity
-				await product.update({ onlineStock })
+				const onlineStock = product.onlineStock + item.quantity;
+				await product.update({ onlineStock });
 			}
 			if (product.type === 'variable') {
-				const variation = await db.product.findOne({ where: { ref: item.variation_id, businessId } })
-				const onlineStock = variation.onlineStock + item.quantity
-				await variation.update({ onlineStock })
+				const variation = await Product.findOne({ where: { ref: item.variation_id, businessId } });
+				const onlineStock = variation.onlineStock + item.quantity;
+				await variation.update({ onlineStock });
 			}
 		}
 
-	} catch(err) {
-		console.log('cannot update order through webhooks.')
-		console.log(err)
-		return res.send({
-			success: false,
-			message: 'cannot update order through webhooks.'
-		})
+	} catch(e) {
+		console.log('cannot update order through webhooks.');
+		next(e);
 	}
 }
 

@@ -67,7 +67,7 @@ function getImages(wcProduct, productId) {
 }
 async function getAll(req, res, next) {
 	try {
-		const business = await Business.findOne({ where: { userId: 1 }});
+		const business = await Business.findOne({ where: { userId: req.user.id }});
 		if(!business) {
 			throw new BaseErr(
 				'BusinessDoesNotExist',

@@ -37,30 +37,23 @@ function checkBulkRemoveReq(req, res, next) {
 	next()
 }
 function checkInputsBeforeCreate(req, res, next) {
-	if (req.body.type === 'simple') {
-		const helper = checkInputsBeforeCreateHelper(req.body)
-		if (helper.hasErr) {
-			return res.json({ success: false, message: helper.errMessages })
-		}
+	const helper = checkInputsBeforeCreateHelper(req.body);
+	if (helper.hasErr) {
+		return res.json({ success: false, message: helper.errMessages });
 	}
-	else if (req.body.type === 'variable') {
-		const helper = checkInputsBeforeCreateHelper(req.body)
-		if (helper.hasErr) {
-			return res.json({ success: false, message: helper.errMessages })
-		}
+	if (req.body.type === 'variable') {
 		if (req.body.variations?.length) {
 			for (const variation of req.body.variations) {
-				const variationHelper = checkInputsBeforeCreateHelper(variation)
+				const variationHelper = checkInputsBeforeCreateHelper(variation);
 				if (variationHelper.hasErr) {
-					return res.json({ success: false, message: helper.errMessages })
+					return res.json({ success: false, message: helper.errMessages });
 				}
 			}
+		} else {
+			return res.json({ success: false, message: 'You did not set variations.' });
 		}
 	}
-	else {
-		return res.json({ success: false, message: 'You must specify product type.'})
-	}
-	next()
+	next();
 }
 function checkInputsBeforeCreateHelper(inputs) {
 	let hasErr = false

@@ -98,6 +98,10 @@ const Product = sequelize.define('product', {
 		{
 			unique: true,
 			fields: ['ref', 'businessId']
+		},
+		{
+			unique: true,
+			fields: ['barcode', 'businessId']
 		}
 	]
 });

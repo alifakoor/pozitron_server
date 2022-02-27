@@ -7,6 +7,7 @@ const { handler } = require('./app/errors/handlers');
 
 // connection to the database
 require('./app/db/conn');
+require('./app/db/associations');
 
 // routes & APIs
 const adminRouter = require('./app/routes/index');

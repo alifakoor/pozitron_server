@@ -4,9 +4,10 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../conn');
 const ProductImage = require('./productImage');
 const ProductMeta = require('./productmeta');
+const Category = require('./category');
 
 const Product = sequelize.define('product', {
-	ref: DataTypes.BIGINT(11), // woocommerce product's id
+	ref: DataTypes.BIGINT(11), // woocommerce products's id
 	name: {
 		type: DataTypes.STRING(200),
 		allowNull: false
@@ -99,25 +100,11 @@ const Product = sequelize.define('product', {
 			unique: true,
 			fields: ['ref', 'businessId']
 		},
-		{
-			unique: true,
-			fields: ['barcode', 'businessId']
-		}
+		// {
+		// 	unique: true,
+		// 	fields: ['barcode', 'businessId']
+		// }
 	]
 });
-
-// associations
-Product.hasMany(Product, {
-	as: 'variations',
-	foreignKey: 'parentId'
-});
-Product.hasMany(ProductImage, {
-	as: 'images'
-});
-ProductImage.belongsTo(Product);
-Product.hasMany(ProductMeta, {
-	as: 'meta'
-});
-ProductMeta.belongsTo(Product);
 
 module.exports = Product;

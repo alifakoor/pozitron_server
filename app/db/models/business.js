@@ -34,8 +34,4 @@ const Business = sequelize.define('business', {
 	timestamps: true
 });
 
-// associations
-Business.hasMany(Product);
-Product.belongsTo(Business);
-
 module.exports = Business;

@@ -131,6 +131,60 @@ class WcHelpers {
 			return false;
 		}
 	}
+	async getAllCategories() {
+		try {
+			let categories = []
+			let totalCategories = 0
+			let totalPages = 1
+			for (let page = 1; page <= totalPages; page++) {
+				const { headers, data } = await this.api.get('products/categories', {
+					page: page,
+					per_page: 100,
+					orderby: 'id',
+					order: 'asc'
+				})
+
+				if (page === 1) {
+					totalPages = headers['x-wp-totalpages']
+					totalCategories = headers['x-wp-total']
+				}
+				categories.push(...data)
+			}
+
+			return { success: true, categories }
+		} catch(err) {
+			console.log('cannot fetch categories from getAllCategories()')
+			console.log(err)
+			return { success: false }
+		}
+	}
+	async getAllTags() {
+		try {
+			let tags = []
+			let totalTags = 0
+			let totalPages = 1
+			for (let page = 1; page <= totalPages; page++) {
+				const { headers, data } = await this.api.get('products/tags', {
+					page: page,
+					per_page: 100,
+					orderby: 'id',
+					order: 'asc'
+				})
+
+				if (page === 1) {
+					totalPages = headers['x-wp-totalpages']
+					totalTags = headers['x-wp-total']
+				}
+				tags.push(...data)
+			}
+
+			return { success: true, tags }
+		} catch(err) {
+			console.log('cannot fetch tags from getAllTags()')
+			console.log(err)
+			return { success: false }
+		}
+	}
 }
 
 // export helper

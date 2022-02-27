@@ -62,7 +62,4 @@ const User = sequelize.define('user', {
 	timestamps: true
 });
 
-User.hasMany(Business);
-Business.belongsTo(User);
-
 module.exports = User;

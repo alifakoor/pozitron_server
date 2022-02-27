@@ -1,54 +1,166 @@
-const db = require("../models")
-const Term = db.term
-const TermMeta = db.termmeta
+'use strict';
 
-// Woocommerce Rest API
-const Woocommerce = require("@woocommerce/woocommerce-rest-api").default
+const Business = require('../db/models/business');
+const Category = require('../db/models/category');
+const BaseErr = require("../errors/baseErr");
+const httpStatusCodes = require("../errors/httpStatusCodes");
 
-const Op = db.Sequelize.Op
+async function getChildren(categories) {
+	for (const category of categories) {
+		const children = await Category.findAll({where: {parentId: category.id}});
+		category.setDataValue('children', children);
+		await getChildren(children);
+	}
+	return categories;
+}
 
-// {
-//     include: [
-//         {
-//             model: db.term,
-//             as: 'Children',
-//             attributes: ['id']
-//         },
-//         {
-//             model: db.termmeta
-//         }
-//     ]
+async function getAll(req, res, next) {
+	try {
+		const business = await Business.findOne({ where: { userId: req.user.id }});
+		if(!business) {
+			throw new BaseErr(
+				'BusinessDoesNotExist',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`The user business not found.`
+			);
+		}
+
+		const categories = await business.getCategories({
+			where: {
+				businessId: business.id,
+				parentId: null
+			}
+		});
+		if(!categories.length) {
+			throw new BaseErr(
+				'BusinessDoesNotHaveCategories',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`There is not any categories.`
+			);
+		}
+
+		const result = await getChildren(categories);
+
+		return res.status(200).json({
+			success: true,
+			message: 'The list of categories found successfully.',
+			data: result,
+			domain: business.domain
+		});
+	} catch(e) {
+		next(e);
+	}
+}
+async function create(req, res, next) {
+	try {
+		const category = await Category.create(req.body);
+		if(!category) {
+			throw new BaseErr(
+				'CategoryNotCreated',
+				httpStatusCodes.NOT_IMPLEMENTED,
+				true,
+				`The category has not been created successfully.`
+			);
+		}
+
+		return res.json({
+			success: true,
+			message: 'The category has been created successfully.',
+			data: category
+		});
+	} catch(e) {
+		next(e);
+	}
+}
+async function update(req, res, next) {
+	try {
+		const category = await Category.findOne({ where: { id: Number(req.params.id) }});
+		if (!category) {
+			throw new BaseErr(
+				'CategoryNotFound',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`The category not found.`
+			);
+		}
+
+		category.name = req.body.name;
+		category.description = req.body.description;
+		// category.slug = req.body.slug;
+
+		await category.save();
+
+		return res.json({
+			success: true,
+			message: 'The category has been updated successfully.',
+			data: category
+		});
+	} catch(e) {
+		next(e);
+	}
+}
+async function remove(req, res, next) {
+	try {
+		const category = await Category.findOne({ where: { id: Number(req.params.id) }});
+		if (!category) {
+			throw new BaseErr(
+				'CategoryNotFound',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`The category not found.`
+			);
+		}
+
+		await category.destroy();
+
+		return res.json({
+			success: true,
+			message: 'The category has been deleted successfully.',
+			data: { id: req.params.id }
+		});
+	} catch(e) {
+		next(e);
+	}
+}
+
+module.exports = {
+	getAll,
+	create,
+	update,
+	remove
+}
+
+// const getChild = async (categories) => {
+// 	let expendPromise = []
+// 	categories.forEach(category => {
+// 		expendPromise.push(Term.findAll({
+// 			where: {
+// 				parent_id: category.id
+// 			}
+// 		}))
+// 	})
+// 	let child = await Promise.all(expendPromise)
+// 	for (let [idx, cat] of child.entries()) {
+// 		if (cat.length > 0) {
+// 			cat = await getChild(cat)
+// 		}
+// 		categories[idx].dataValues.children = cat
+// 	}
+// 	return categories
 // }
 
-const getChild = async (categories) => {
-    let expendPromise = []
-    categories.forEach(category => {
-        expendPromise.push(Term.findAll({
-            where: {
-                parent_id: category.id
-            }
-        }))
-    })
-    let child = await Promise.all(expendPromise)
-    for (let [idx, cat] of child.entries()) {
-        if (cat.length > 0) {
-            cat = await getChild(cat)
-        }
-        categories[idx].dataValues.children = cat
-    }
-    return categories
-}
-
-exports.categories = (req, res) => {
-    Term.findAll({
-        where: {
-            parent_id: null
-        }
-    }).then(async (categories) => {
-        const result = await getChild(categories)
-        res.status(200).send(result)
-    }).catch((err) => { console.log(`all categories not found with err: ${err}`) })
-}
+// exports.categories = (req, res) => {
+//     Term.findAll({
+//         where: {
+//             parent_id: null
+//         }
+//     }).then(async (categories) => {
+//         const result = await getChild(categories)
+//         res.status(200).send(result)
+//     }).catch((err) => { console.log(`all categories not found with err: ${err}`) })
+// }
 
 // exports.syncCategories = async (req, res) => {
 //     const api = new Woocommerce({

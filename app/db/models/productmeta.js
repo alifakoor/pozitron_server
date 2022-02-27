@@ -19,7 +19,7 @@ const ProductMeta = sequelize.define('productmeta', {
 		}
 	}
 }, {
-	tableName: 'productmeta',
+	tableName: 'product_meta',
 	timestamps: true,
 	indexes: [
 		{

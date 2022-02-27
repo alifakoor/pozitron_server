@@ -18,6 +18,7 @@ const httpStatusCodes = require('../errors/httpStatusCodes');
 // helpers
 const WcHelpers = require('../helpers/wc.helpers');
 const { calculateDiscount, calculateSalePrice } = require('../helpers/product.helpers');
+const Upload = require('../utils/upload');
 
 // functions
 function getMeta(wcProduct, productId) {
@@ -147,6 +148,15 @@ async function create(req, res, next) {
 				productId: product.id
 			});
 		}
+		if (req.body.image?.length) {
+			for (const img of req.body.image) {
+				await ProductImage.create({
+					src: img.src,
+					name: img.name,
+					productId: product.id
+				});
+			}
+		}
 
 		if (req.body.type === 'variable') {
 			for (const variation of req.body.variations) {
@@ -183,7 +193,7 @@ async function create(req, res, next) {
 
 		return res.json({
 			success: true,
-			message: 'The product has been created successfully.',
+			message: 'The products has been created successfully.',
 			data: product
 		});
 	} catch(e) {
@@ -320,12 +330,35 @@ async function remove(req, res, next) {
 		next(e);
 	}
 }
+async function upload(req, res, next) {
+	try {
+		const upload = new Upload('products');
+		await upload.single(req, res, 'image');
+		if (!req.file) {
+			throw new BaseErr(
+				'UploadFailed',
+				httpStatusCodes.NOT_IMPLEMENTED,
+				true,
+				`The file didn't upload successfully.`
+			);
+		}
+
+		const data = {
+			name: req.file.filename,
+			url: `/uploads/products/${req.file.filename}`
+		}
+		return res.send({ success: true, message: 'image uploaded.', data });
+
+	} catch(e) {
+		next(e);
+	}
+}
 
 // handlers for webhooks action
 /*
-	both createWithWebhook and updateWithWebhook for variable product are the same,
-	because in woocommerce it calls product.update webhook for a variable,
-	after publish button has been clicked, the product.create webhook work for variables
+	both createWithWebhook and updateWithWebhook for variable products are the same,
+	because in woocommerce it calls products.update webhook for a variable,
+	after publish button has been clicked, the products.create webhook work for variables
  */
 async function logWebhookResponse(webhook, body) {
 	try {
@@ -343,7 +376,7 @@ async function logWebhookResponse(webhook, body) {
 }
 async function createdWithWebhook(req, res, next) {
 	try {
-		await logWebhookResponse('product create', req.body)
+		await logWebhookResponse('products create', req.body)
 
 		const { businessId, businessKey } = req.params
 		const business = await Business.findByPk(businessId)
@@ -377,7 +410,7 @@ async function createdWithWebhook(req, res, next) {
 		/*
 			if there is some orphan variations
 			if (req.body.type === 'variable') {
-				const parent = await Product.upsert(product)
+				const parent = await Product.upsert(products)
 				for (const variation of req.body.variations) {
 					const productVariation = await Product.findOne({ where: { ref: variation } })
 					productVariation.update({ parentId: parent.id })
@@ -395,21 +428,21 @@ async function createdWithWebhook(req, res, next) {
 			updateOnDuplicate: ['src', 'name']
 		})
 
-		return res.json({ success: false, message: 'The product has been created successfully. '})
+		return res.json({ success: false, message: 'The products has been created successfully. '})
 
 	} catch(e) {
 		next(e);
-		// console.log('cannot create product through webhooks.')
+		// console.log('cannot create products through webhooks.')
 		// console.log(err)
 		// return res.send({
 		// 	success: false,
-		// 	message: 'cannot create product through webhooks.'
+		// 	message: 'cannot create products through webhooks.'
 		// })
 	}
 }
 async function updatedWithWebhook(req, res, next) {
 	try {
-		await logWebhookResponse('product update', req.body)
+		await logWebhookResponse('products update', req.body)
 
 		const { businessId, businessKey } = req.params
 		const business = await Business.findByPk(businessId)
@@ -439,14 +472,14 @@ async function updatedWithWebhook(req, res, next) {
 		// if (req.body.type === 'variable') {
 		// 	await Product.upsert(data)
 		// } else {
-		// 	const product = await Product.findOne({ where: { ref: req.body.id, businessId } })
-		// 	if (!product) {
+		// 	const products = await Product.findOne({ where: { ref: req.body.id, businessId } })
+		// 	if (!products) {
 		// 		return res.send({
 		// 			success: false,
-		// 			message: 'this product not found.'
+		// 			message: 'this products not found.'
 		// 		})
 		// 	}
-		// 	await product.update(data)
+		// 	await products.update(data)
 		// }
 
 		const [updatedProduct] = await Product.upsert(product)
@@ -460,21 +493,21 @@ async function updatedWithWebhook(req, res, next) {
 			updateOnDuplicate: ['src', 'name']
 		})
 
-		return res.json({ success: false, message: 'The product has been updated successfully. '})
+		return res.json({ success: false, message: 'The products has been updated successfully. '})
 
 	} catch(e) {
 		next(e);
-		// console.log('cannot update product through webhooks.')
+		// console.log('cannot update products through webhooks.')
 		// console.log(err)
 		// return res.send({
 		// 	success: false,
-		// 	message: 'cannot update product through webhooks.'
+		// 	message: 'cannot update products through webhooks.'
 		// })
 	}
 }
 async function deletedWithWebhook(req, res, next) {
 	try {
-		await logWebhookResponse('product delete', req.body)
+		await logWebhookResponse('products delete', req.body)
 
 		const { businessId, businessKey } = req.params
 		const business = await Business.findByPk(businessId)
@@ -488,18 +521,18 @@ async function deletedWithWebhook(req, res, next) {
 		if (!product) {
 			return res.send({
 				success: false,
-				message: 'this product not found.'
+				message: 'this products not found.'
 			})
 		}
 
 		await product.destroy()
 	} catch(e) {
 		next(e);
-		// console.log('cannot delete product through webhooks.')
+		// console.log('cannot delete products through webhooks.')
 		// console.log(err)
 		// return res.send({
 		// 	success: false,
-		// 	message: 'cannot delete product through webhooks.'
+		// 	message: 'cannot delete products through webhooks.'
 		// })
 	}
 }
@@ -510,6 +543,7 @@ module.exports = {
 	create,
 	edit,
 	remove,
+	upload,
 	createdWithWebhook,
 	updatedWithWebhook,
 	deletedWithWebhook

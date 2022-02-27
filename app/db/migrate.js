@@ -1,13 +1,12 @@
 'use strict';
 
 const sequelize = require('./conn');
-
-const User = require('./models/user');
-const Business = require('./models/business');
+require('./associations');
 
 (async () => {
 	try {
-		await sequelize.sync({ alter: true });
+		await sequelize.sync({ alter: true, force: true });
+
 		// await Business.sync({ alter: true, force: true });
 		// await User.sync({ alter: true, force: true });
 

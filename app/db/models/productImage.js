@@ -23,7 +23,7 @@ const ProductImage = sequelize.define('productImage', {
 		defaultValue: false
 	}
 }, {
-	tableName: 'productImages',
+	tableName: 'product_images',
 	timestamps: true,
 	indexes: [
 		{

@@ -4,6 +4,8 @@ const Business = require('../db/models/business');
 const Product = require('../db/models/product');
 const ProductMeta = require('../db/models/productmeta');
 const ProductImage = require('../db/models/productImage');
+const Category = require("../db/models/category");
+const Tag = require("../db/models/tag");
 
 // woocommerce helper
 const WcHelpers = require('../helpers/wc.helpers');
@@ -92,6 +94,25 @@ async function insertProductToDB(product, businessId, parentId = null) {
 		console.log(e);
 	}
 }
+async function insertCategoryInDB(category, businessId, parentId = null) {
+	try {
+		return await Category.create({
+			ref: category.id,
+			name: category.name,
+			slug: decodeURIComponent(category.slug),
+			description: category.description,
+			image: category.image?.src,
+			count: category.count,
+			link: JSON.stringify(category._links),
+			businessId,
+			parentId
+		});
+
+	} catch(e) {
+		console.log(`cannot insert category to DB, categoryId: ${category.id}`);
+		console.log(e);
+	}
+}
 
 async function check(req, res, next) {
 	try {
@@ -139,8 +160,29 @@ async function create(req, res, next) {
 		}
 
 		const wc = new WcHelpers(`https://${req.body.domain}`, req.body.key, req.body.secret);
-		const { success, products, variations } = await wc.getAllProducts();
-		if (!success) {
+
+		const { success: isCategoriesLoaded, categories } = await wc.getAllCategories();
+		if (!isCategoriesLoaded) {
+			throw new BaseErr(
+				'WoocommerceGetCategoryFailed',
+				httpStatusCodes.NOT_ACCEPTABLE,
+				true,
+				`Cannot fetch categories`
+			);
+		}
+
+		const { success: isTagsLoaded, tags } = await wc.getAllTags();
+		if (!isTagsLoaded) {
+			throw new BaseErr(
+				'WoocommerceGetTagFailed',
+				httpStatusCodes.NOT_ACCEPTABLE,
+				true,
+				`Cannot fetch tags`
+			);
+		}
+
+		const { success: isProductLoaded, products, variations } = await wc.getAllProducts();
+		if (!isProductLoaded) {
 			throw new BaseErr(
 				'WoocommerceGetProductFailed',
 				httpStatusCodes.NOT_ACCEPTABLE,
@@ -157,6 +199,39 @@ async function create(req, res, next) {
 		});
 
 		await wc.createWebhooks(business.id, business.key);
+
+		for (const category of categories) {
+			if (!!category.parent) {
+				const newParent = await Category.findOne({ where: { ref: category.parent }});
+				if (newParent) {
+					const isCategoryExisted = await Category.findOne({ where: { ref: category.id }});
+					if (!isCategoryExisted) {
+						await insertCategoryInDB(category, business.id, newParent.id);
+					} else {
+						isCategoryExisted.parentId = newParent.id;
+						await isCategoryExisted.save();
+					}
+				} else {
+					const parent = categories.find(c => c.id === category.parent);
+					const parentCreated = await insertCategoryInDB(parent, business.id);
+					await insertCategoryInDB(category, business.id, parentCreated.id);
+				}
+			} else {
+				await insertCategoryInDB(category, business.id);
+			}
+		}
+
+		for (const tag of tags) {
+			await Tag.create({
+				ref: tag.id,
+				name: tag.name,
+				slug: decodeURIComponent(tag.slug),
+				description: tag.description,
+				count: tag.count,
+				link: JSON.stringify(tag._links),
+				businessId: business.id
+			});
+		}
 
 		for (const product of products) {
 			let createdProduct = await insertProductToDB(product, business.id);

@@ -6,6 +6,11 @@ const Category = require("./models/category");
 const Tag = require("./models/tag");
 const ProductImage = require("./models/productImage");
 const ProductMeta = require("./models/productmeta");
+const Order = require("./models/order");
+const OrderHasProducts = require("./models/orderHasProducts");
+const Customer = require("./models/customer");
+const Address = require("./models/address");
+
 
 User.hasMany(Business);
 Business.belongsTo(User);
@@ -18,6 +23,12 @@ Category.belongsTo(Business);
 
 Business.hasMany(Tag);
 Tag.belongsTo(Business);
+
+Business.hasMany(Order);
+Order.belongsTo(Business);
+
+Business.hasMany(Customer);
+Customer.belongsTo(Business);
 
 Product.hasMany(Product, {
 	as: 'variations',
@@ -62,4 +73,36 @@ Tag.belongsToMany(Product, {
 	as: 'products',
 	onUpdate: 'CASCADE',
 	onDelete: 'CASCADE'
+});
+
+Product.belongsToMany(Order, {
+	through: OrderHasProducts,
+	as: 'orders',
+	onUpdate: 'CASCADE',
+	onDelete: 'CASCADE'
+});
+Order.belongsToMany(Product, {
+	through: OrderHasProducts,
+	as: 'products',
+	onUpdate: 'CASCADE',
+	onDelete: 'CASCADE',
+});
+
+Customer.hasMany(Order);
+Order.belongsTo(Customer, {
+	foreignKey: {
+		name: 'customerId',
+		allowNull: true
+	}
+});
+
+Customer.hasMany(Address);
+Address.belongsTo(Customer);
+
+Address.hasMany(Order);
+Order.belongsTo(Address, {
+	foreignKey: {
+		name: 'addressId',
+		allowNull: true
+	}
 });

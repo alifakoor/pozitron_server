@@ -2,7 +2,6 @@
 
 const { DataTypes } = require('sequelize');
 const sequelize = require('../conn');
-const Product = require('./product');
 
 const Business = sequelize.define('business', {
 	domain: {

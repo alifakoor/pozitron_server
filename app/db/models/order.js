@@ -12,7 +12,7 @@ const Order = sequelize.define('order', {
 		defaultValue: 'pending'
 	},
 	currency: {
-		type: DataTypes.ENUM('IRR', 'USD', 'EUR'),
+		type: DataTypes.ENUM('IRR', 'IRT', 'USD', 'EUR'),
 		defaultValue: 'IRR'
 	},
 	discountTotal: {

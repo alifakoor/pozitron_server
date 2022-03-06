@@ -48,12 +48,12 @@ function verifyToken(req, res, next) {
 		if (err) {
 			return res.status(401).json({ success: false, message: "Unauthorized!" });
 		}
-		// const date = new Date()
-		// if (Math.floor(date.getTime() / 1000) > decoded.exp){
-		//     return res.status(401).send({
-		//         message: "Unauthorized!"
-		//     })
-		// }
+		const date = new Date()
+		if (Math.floor(date.getTime() / 1000) > decoded.exp){
+		    return res.status(401).send({
+		        message: "Unauthorized!"
+		    })
+		}
 		req.user = decoded.user;
 		next();
 	});

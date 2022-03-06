@@ -6,6 +6,8 @@ const ProductMeta = require('../db/models/productmeta');
 const ProductImage = require('../db/models/productImage');
 const Category = require("../db/models/category");
 const Tag = require("../db/models/tag");
+const Order = require('../db/models/order');
+const OrderHasProducts = require('../db/models/orderHasProducts');
 
 // woocommerce helper
 const WcHelpers = require('../helpers/wc.helpers');
@@ -191,6 +193,16 @@ async function create(req, res, next) {
 			);
 		}
 
+		const { success: isOrderLoaded, orders} = await wc.getAllOrders();
+		if (!isOrderLoaded) {
+			throw new BaseErr(
+				'WoocommerceGetOrderFailed',
+				httpStatusCodes.NOT_ACCEPTABLE,
+				true,
+				`Cannot fetch orders.`
+			);
+		}
+
 		const business = await Business.create({
 			domain: req.body.domain,
 			key: req.body.key,
@@ -243,9 +255,43 @@ async function create(req, res, next) {
 			}
 		}
 
+		for (const order of orders) {
+			const createdOrder = await Order.create({
+				ref: order.id,
+				src: 'online',
+				orderKey: order.order_key,
+				status: order.status,
+				currency: order.currency,
+				discountTotal: order.discount_total ? Math.floor((order.discount_total * 100) / order.total) : 0,
+				shippingTotal: order.shipping_total,
+				totalPrice: order.total,
+				totalTax: order.total_tax,
+				businessId: business.id
+			});
+			for (const product of order.line_items) {
+
+				let productRef = product.variation_id || product.product_id;
+				let data = {
+					name: product.name,
+					price: product.price,
+					quantity: product.quantity,
+					total: +product.total,
+					totalTax: +product.total_tax,
+					orderId: createdOrder.id
+				};
+
+				if (productRef) {
+					const existedProduct = await Product.findOne({ where: { ref: productRef }});
+					data['productId'] = existedProduct.id;
+				}
+
+				await OrderHasProducts.create(data);
+			}
+		}
+
 		return res.json({
 			success: true,
-			message: 'The products have loaded successfully.'
+			message: 'The categories, tags, products and orders have loaded successfully.'
 		});
 
 	} catch(e) {

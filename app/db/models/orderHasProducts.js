@@ -2,10 +2,12 @@
 
 const { DataTypes } = require('sequelize');
 const sequelize = require('../conn');
+const Product = require('./product');
+const Order = require('./order');
 
 const OrderHasProducts = sequelize.define('orderHasProduct', {
 	name: {
-		type: DataTypes.STRING(200),
+		type: DataTypes.STRING,
 		allowNull: false
 	},
 	price: {
@@ -45,7 +47,22 @@ const OrderHasProducts = sequelize.define('orderHasProduct', {
 		defaultValue: 1,
 		allowNull: false
 	},
-	totalTax: DataTypes.INTEGER
+	total: DataTypes.BIGINT,
+	totalTax: DataTypes.INTEGER,
+	// productId: {
+	// 	type: DataTypes.BIGINT,
+	// 	references: {
+	// 		model: Product,
+	// 		key: 'id'
+	// 	}
+	// },
+	// orderId: {
+	// 	type: DataTypes.BIGINT,
+	// 	references: {
+	// 		model: Order,
+	// 		key: 'id'
+	// 	}
+	// }
 }, {
 	tableName: 'order_has_products',
 	timestamps: true

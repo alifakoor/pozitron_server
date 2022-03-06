@@ -75,18 +75,15 @@ Tag.belongsToMany(Product, {
 	onDelete: 'CASCADE'
 });
 
-Product.belongsToMany(Order, {
-	through: OrderHasProducts,
-	as: 'orders',
-	onUpdate: 'CASCADE',
-	onDelete: 'CASCADE'
+Product.hasMany(OrderHasProducts, {
+	as: 'orders'
 });
-Order.belongsToMany(Product, {
-	through: OrderHasProducts,
-	as: 'products',
-	onUpdate: 'CASCADE',
-	onDelete: 'CASCADE',
+OrderHasProducts.belongsTo(Product);
+
+Order.hasMany(OrderHasProducts, {
+	as: 'items'
 });
+OrderHasProducts.belongsTo(Order);
 
 Customer.hasMany(Order);
 Order.belongsTo(Customer, {

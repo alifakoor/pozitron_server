@@ -185,6 +185,36 @@ class WcHelpers {
 			return { success: false }
 		}
 	}
+	async getAllOrders() {
+		try {
+			let orders = []
+			let totalTags = 0
+			let totalPages = 1
+			for (let page = 1; page <= totalPages; page++) {
+				const { headers, data } = await this.api.get('orders', {
+					page: page,
+					per_page: 100,
+					orderby: 'id',
+					order: 'asc'
+				})
+
+				if (page === 1) {
+					totalPages = headers['x-wp-totalpages']
+					totalTags = headers['x-wp-total']
+				}
+				orders.push(...data)
+			}
+
+			return { success: true, orders }
+		} catch(err) {
+			console.log('cannot fetch orders from getAllOrders()')
+			console.log(err)
+			return { success: false }
+		}
+	}
+	async updateOrder({ id, status }) {
+		return await this.api.put(`orders/${id}`, { status })
+	}
 }
 
 // export helper

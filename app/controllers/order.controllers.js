@@ -7,6 +7,8 @@ const path = require('path');
 // models
 const Business = require('../db/models/business');
 const Product = require('../db/models/product');
+const Order = require('../db/models/order');
+const OrderHasProducts = require('../db/models/orderHasProducts');
 
 // error handlers
 const BaseErr = require('../errors/baseErr');
@@ -14,8 +16,94 @@ const httpStatusCodes = require('../errors/httpStatusCodes');
 
 // helpers
 const { calculateDiscount } = require('../helpers/product.helpers');
+const {ORDER} = require("mysql/lib/PoolSelector");
+const WcHelpers = require("../helpers/wc.helpers");
 
 // functions
+async function getAll(req, res, next) {
+	try {
+		const business = await Business.findOne({ where: { userId: req.user.id }});
+		if(!business) {
+			throw new BaseErr(
+				'BusinessDoesNotExist',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`The user business not found.`
+			);
+		}
+
+		// console.log(Object.keys(Business.prototype));
+
+		const orders = await business.getOrders({
+			where: {
+				businessId: business.id
+			},
+			include: [
+				{
+					model: OrderHasProducts,
+					as: 'items'
+				}
+			]
+		});
+		if(!orders.length) {
+			throw new BaseErr(
+				'BusinessDoesNotHaveOrders',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`There is not any orders.`
+			);
+		}
+
+		return res.status(200).json({
+			success: true,
+			message: 'The list of orders found successfully.',
+			data: orders,
+			domain: business.domain
+		});
+
+	} catch(e) {
+		next(e);
+	}
+}
+async function edit(req, res, next) {
+	try {
+		const business = await Business.findOne({ where: { userId: req.user.id }});
+		if (!business) {
+			throw new BaseErr(
+				'BusinessNotFound',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`The business does not exists.`
+			);
+		}
+
+		const order = await Order.findByPk(+req.params.id);
+		if (!order) {
+			throw new BaseErr(
+				'OrderNotFound',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`The order does not exists.`
+			);
+		}
+
+		const { status } = req.body;
+		const wc = new WcHelpers(`https://${business.domain}`, business.key, business.secret);
+
+		await wc.updateOrder({ id: order.ref, status });
+
+		order.status = status;
+		await order.save();
+
+		return res.json({
+			success: true,
+			message: 'The order have been updated successfully.'
+		});
+
+	} catch(e) {
+		next(e);
+	}
+}
 
 // handlers for webhooks action
 async function logWebhookResponse(webhook, body) {
@@ -161,6 +249,8 @@ async function deletedWithWebhook(req, res, next) {
 
 // export controller
 module.exports = {
+	getAll,
+	edit,
 	createdWithWebhook,
 	updatedWithWebhook,
 	deletedWithWebhook

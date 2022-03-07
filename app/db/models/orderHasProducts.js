@@ -48,21 +48,10 @@ const OrderHasProducts = sequelize.define('orderHasProduct', {
 		allowNull: false
 	},
 	total: DataTypes.BIGINT,
-	totalTax: DataTypes.INTEGER,
-	// productId: {
-	// 	type: DataTypes.BIGINT,
-	// 	references: {
-	// 		model: Product,
-	// 		key: 'id'
-	// 	}
-	// },
-	// orderId: {
-	// 	type: DataTypes.BIGINT,
-	// 	references: {
-	// 		model: Order,
-	// 		key: 'id'
-	// 	}
-	// }
+	totalTax: {
+		type: DataTypes.INTEGER,
+		defaultValue: 0
+	}
 }, {
 	tableName: 'order_has_products',
 	timestamps: true

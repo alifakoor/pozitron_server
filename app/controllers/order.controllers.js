@@ -65,6 +65,68 @@ async function getAll(req, res, next) {
 		next(e);
 	}
 }
+async function create(req, res, next) {
+	try {
+		const business = await Business.findOne({ where: { userId: req.user.id }});
+		if(!business) {
+			throw new BaseErr(
+				'BusinessDoesNotExist',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`The user business not found.`
+			);
+		}
+
+		const product = await Product.findByPk(req.body.item);
+		if (!product) {
+			throw new BaseErr(
+				'ProductDoesNotExist',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`The product not found.`
+			);
+		}
+
+		const order = await Order.create({
+			src: 'offline',
+			orderKey: `order_key_${business.domain}`
+		});
+		if (!order) {
+			throw new BaseErr(
+				'OrderNotCreated',
+				httpStatusCodes.NOT_IMPLEMENTED,
+				true,
+				`The order has not been created successfully.`
+			);
+		}
+
+		const orderHasProduct = await OrderHasProducts.create({
+			name: product.name,
+			price: product.price,
+			onlinePrice: product.onlinePrice,
+			onlineDiscount: product.onlineDiscount,
+			onlineSalePrice: product.onlineSalePrice,
+			total: product.price
+		});
+		if (!orderHasProduct) {
+			throw new BaseErr(
+				'OrderHasProductNotCreated',
+				httpStatusCodes.NOT_IMPLEMENTED,
+				true,
+				`The relation between order and product not been created successfully.`
+			);
+		}
+
+		return res.status(200).json({
+			success: true,
+			message: 'The order created successfully.',
+			data: order
+		});
+	} catch(e) {
+		next(e);
+	}
+}
+
 async function edit(req, res, next) {
 	try {
 		const business = await Business.findOne({ where: { userId: req.user.id }});
@@ -250,6 +312,7 @@ async function deletedWithWebhook(req, res, next) {
 // export controller
 module.exports = {
 	getAll,
+	create,
 	edit,
 	createdWithWebhook,
 	updatedWithWebhook,

@@ -13,7 +13,7 @@ const Order = sequelize.define('order', {
 	},
 	currency: {
 		type: DataTypes.ENUM('IRR', 'IRT', 'USD', 'EUR'),
-		defaultValue: 'IRR'
+		defaultValue: 'IRT'
 	},
 	discountTotal: {
 		type: DataTypes.INTEGER,
@@ -23,9 +23,27 @@ const Order = sequelize.define('order', {
 			max: 100
 		}
 	},
-	shippingTotal: DataTypes.INTEGER,
-	totalPrice: DataTypes.BIGINT,
-	totalTax: DataTypes.BIGINT,
+	shippingTotal: {
+		type: DataTypes.INTEGER,
+		defaultValue: 0,
+		validate: {
+			min: 0
+		}
+	},
+	totalPrice: {
+		type: DataTypes.BIGINT,
+		defaultValue: 0,
+		validate: {
+			min: 0
+		}
+	},
+	totalTax: {
+		type: DataTypes.BIGINT,
+		defaultValue: 0,
+		validate: {
+			min: 0
+		}
+	},
 	deliveryDate: DataTypes.DATEONLY
 }, {
 	tableName: 'orders',

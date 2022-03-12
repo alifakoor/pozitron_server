@@ -4,6 +4,8 @@ const Business = require('../db/models/business');
 const Category = require('../db/models/category');
 const BaseErr = require("../errors/baseErr");
 const httpStatusCodes = require("../errors/httpStatusCodes");
+const {DataTypes} = require("sequelize");
+const { generateSlug } = require('../utils/slug');
 
 async function getChildren(categories) {
 	for (const category of categories) {
@@ -55,7 +57,13 @@ async function getAll(req, res, next) {
 }
 async function create(req, res, next) {
 	try {
-		const category = await Category.create(req.body);
+		const category = await Category.create({
+			name: req.body.name,
+			slug: req.body.slug ? req.body.slug : generateSlug(req.body.name),
+			description: req.body.description,
+			businessId: req.business.id
+		});
+
 		if(!category) {
 			throw new BaseErr(
 				'CategoryNotCreated',

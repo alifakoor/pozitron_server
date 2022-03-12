@@ -55,6 +55,7 @@ function verifyToken(req, res, next) {
 		    })
 		}
 		req.user = decoded.user;
+		req.business = decoded.business;
 		next();
 	});
 }

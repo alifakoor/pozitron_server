@@ -4,7 +4,10 @@ const BaseErr = require('./baseErr');
 function handler(err, req, res, next) {
 	logErr(err);
 	if(!err.isOperational) {
-		returnErr({ message: 'Internal Server Error.'}, req, res, next);
+		return res.status(err.statusCode || 500).json({
+			success: false,
+			message: 'Internal Server Error.'
+		});
 		// process.exit(1);
 	}
 	returnErr(err, req, res, next);

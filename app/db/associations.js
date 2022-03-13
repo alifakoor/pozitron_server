@@ -81,7 +81,9 @@ Product.hasMany(OrderHasProducts, {
 OrderHasProducts.belongsTo(Product);
 
 Order.hasMany(OrderHasProducts, {
-	as: 'items'
+	as: 'items',
+	onUpdate: 'CASCADE',
+	onDelete: 'CASCADE'
 });
 OrderHasProducts.belongsTo(Order);
 

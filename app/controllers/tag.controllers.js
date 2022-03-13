@@ -4,6 +4,7 @@ const Business = require('../db/models/business');
 const Tag = require('../db/models/tag');
 const BaseErr = require("../errors/baseErr");
 const httpStatusCodes = require("../errors/httpStatusCodes");
+const {generateSlug} = require("../utils/slug");
 
 async function getAll(req, res, next) {
 	try {
@@ -43,7 +44,12 @@ async function getAll(req, res, next) {
 }
 async function create(req, res, next) {
 	try {
-		const tag = await Tag.create(req.body);
+		const tag = await Tag.create({
+			name: req.body.name,
+			slug: req.body.slug ? req.body.slug : generateSlug(req.body.name),
+			description: req.body.description,
+			businessId: req.business.id
+		});
 		if(!tag) {
 			throw new BaseErr(
 				'TagNotCreated',

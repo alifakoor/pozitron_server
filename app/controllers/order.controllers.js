@@ -7,6 +7,7 @@ const path = require('path');
 // models
 const Business = require('../db/models/business');
 const Product = require('../db/models/product');
+const ProductImage = require('../db/models/productImage');
 const Order = require('../db/models/order');
 const OrderHasProducts = require('../db/models/orderHasProducts');
 
@@ -41,7 +42,17 @@ async function getAll(req, res, next) {
 			include: [
 				{
 					model: OrderHasProducts,
-					as: 'items'
+					as: 'items',
+					include: [
+						{
+							model: Product,
+							left: true,
+							attributes: ['id'],
+							include: [
+								{ model: ProductImage, as: 'images', attributes: ['src'] }
+							]
+						}
+					]
 				}
 			]
 		});
@@ -126,7 +137,6 @@ async function create(req, res, next) {
 		next(e);
 	}
 }
-
 async function edit(req, res, next) {
 	try {
 		const business = await Business.findOne({ where: { userId: req.user.id }});
@@ -139,27 +149,55 @@ async function edit(req, res, next) {
 			);
 		}
 
-		const order = await Order.findByPk(+req.params.id);
-		if (!order) {
-			throw new BaseErr(
-				'OrderNotFound',
-				httpStatusCodes.NOT_FOUND,
-				true,
-				`The order does not exists.`
-			);
-		}
-
 		const { status } = req.body;
+
 		const wc = new WcHelpers(`https://${business.domain}`, business.key, business.secret);
 
-		await wc.updateOrder({ id: order.ref, status });
+		for (const id of req.body.ids) {
+			const order = await Order.findByPk(+id);
+			if (order?.businessId !== business.id) continue;
 
-		order.status = status;
-		await order.save();
+			await wc.updateOrder({ id: order.ref, status });
+
+			order.status = status;
+			await order.save();
+		}
 
 		return res.json({
 			success: true,
 			message: 'The order have been updated successfully.'
+		});
+
+	} catch(e) {
+		next(e);
+	}
+}
+async function remove(req, res, next) {
+	try {
+		const business = await Business.findOne({ where: { userId: req.user.id }});
+		if (!business) {
+			throw new BaseErr(
+				'BusinessNotFound',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`The business does not exists.`
+			);
+		}
+
+		const wc = new WcHelpers(`https://${business.domain}`, business.key, business.secret);
+
+		for (const id of req.body.ids) {
+			const order = await Order.findByPk(+id);
+			if (order?.businessId !== business.id) continue;
+
+			await wc.deleteOrder(order.ref);
+
+			await order.destroy();
+		}
+
+		return res.json({
+			success: true,
+			message: 'The orders have been deleted successfully.'
 		});
 
 	} catch(e) {
@@ -314,6 +352,7 @@ module.exports = {
 	getAll,
 	create,
 	edit,
+	remove,
 	createdWithWebhook,
 	updatedWithWebhook,
 	deletedWithWebhook

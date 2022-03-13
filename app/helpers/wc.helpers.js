@@ -215,6 +215,9 @@ class WcHelpers {
 	async updateOrder({ id, status }) {
 		return await this.api.put(`orders/${id}`, { status })
 	}
+	async deleteOrder(id) {
+		return await this.api.delete(`orders/${+id}`);
+	}
 }
 
 // export helper

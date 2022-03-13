@@ -81,7 +81,7 @@ async function verifyCode(req, res, next) {
 				id: user.id
 			},
 			business: {
-				id: business[0].id
+				id: business[0]?.id
 			}
 		}, process.env.JWT_SECRET, { expiresIn: +process.env.JWT_EXPIRATION || 86400 });
 

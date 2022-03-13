@@ -9,6 +9,7 @@ const {
 	getAll,
 	create,
 	edit,
+	remove,
 	createdWithWebhook,
 	updatedWithWebhook,
 	deletedWithWebhook
@@ -16,7 +17,8 @@ const {
 
 router.get('', verifyToken, getAll);
 router.post('', verifyToken, checkInputsBeforeCreate, create);
-router.put('/:id', verifyToken, edit);
+router.put('', verifyToken, edit);
+router.delete('', verifyToken, remove);
 
 router.post('/webhook/create/:businessId/:businessKey', verifyWebhook, createdWithWebhook);
 router.post('/webhook/update/:businessId/:businessKey', verifyWebhook, updatedWithWebhook);

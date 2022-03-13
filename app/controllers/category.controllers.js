@@ -95,8 +95,8 @@ async function update(req, res, next) {
 		}
 
 		category.name = req.body.name;
+		category.slug = req.body.slug ? req.body.slug : generateSlug(req.body.name);
 		category.description = req.body.description;
-		// category.slug = req.body.slug;
 
 		await category.save();
 

@@ -353,6 +353,25 @@ async function upload(req, res, next) {
 		next(e);
 	}
 }
+async function removeUpload(req, res, next) {
+	try {
+		if (!req.params.name) {
+			throw new BaseErr(
+				'InvalidParams',
+				httpStatusCodes.NOT_ACCEPTABLE,
+				true,
+				`The name is required.`
+			);
+		}
+
+		await fs.unlink(path.join(__dirname, `../public/uploads/products/${req.params.name}`))
+
+		return res.send({ success: true, message: 'uploaded image removed.' });
+
+	} catch(e) {
+		next(e);
+	}
+}
 
 // handlers for webhooks action
 /*
@@ -544,6 +563,7 @@ module.exports = {
 	edit,
 	remove,
 	upload,
+	removeUpload,
 	createdWithWebhook,
 	updatedWithWebhook,
 	deletedWithWebhook

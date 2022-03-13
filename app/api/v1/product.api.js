@@ -11,6 +11,7 @@ const {
 	edit,
 	remove,
 	upload,
+	removeUpload,
 	createdWithWebhook,
 	updatedWithWebhook,
 	deletedWithWebhook
@@ -21,6 +22,7 @@ router.post('/create', [ verifyToken, checkInputsBeforeCreate ], create);
 router.put('/edit', [ verifyToken, checkBulkEditReq ], edit);
 router.post('/remove', [ verifyToken, checkBulkRemoveReq ], remove);
 router.post('/upload', verifyToken, upload);
+router.delete('/upload/:name', verifyToken, removeUpload);
 router.post('/webhook/create/:businessId/:businessKey', [ verifyWebhook ], createdWithWebhook);
 router.post('/webhook/update/:businessId/:businessKey', [ verifyWebhook ], updatedWithWebhook);
 router.post('/webhook/delete/:businessId/:businessKey', [ verifyWebhook ], deletedWithWebhook);

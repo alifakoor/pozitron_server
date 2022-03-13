@@ -74,14 +74,9 @@ async function verifyCode(req, res, next) {
 			);
 		}
 
-		const business = await user.getBusinesses();
-
 		let token = jwt.sign({
 			user: {
 				id: user.id
-			},
-			business: {
-				id: business[0]?.id
 			}
 		}, process.env.JWT_SECRET, { expiresIn: +process.env.JWT_EXPIRATION || 86400 });
 

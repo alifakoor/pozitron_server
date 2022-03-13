@@ -12,34 +12,31 @@ const Product = sequelize.define('product', {
 		type: DataTypes.STRING(200),
 		allowNull: false
 	},
-	barcode: {
-		type: DataTypes.STRING(50),
-		allowNull: false
-	},
+	barcode: DataTypes.STRING(50),
 	type: {
-		type: DataTypes.STRING(20),
-		allowNull: false,
+		type: DataTypes.ENUM('simple', 'variable', 'variation', 'composite', 'bundle'),
+		defaultValue: 'simple',
 		validate: {
 			isIn: [[
-				"simple",
-				"variable",
-				"variation",
-				"composite",
-				"bundle"
+				'simple',
+				'variable',
+				'variation',
+				'composite',
+				'bundle'
 			]]
 		}
 	},
 	status: {
-		type: DataTypes.STRING(20),
-		allowNull: false,
+		type: DataTypes.ENUM('draft', 'pending', 'private', 'publish', 'available', 'unavailable'),
+		defaultValue: 'publish',
 		validate: {
 			isIn: [[
-				"draft",
-				"pending",
-				"private",
-				"publish",
-				"available",
-				"unavailable"
+				'draft',
+				'pending',
+				'private',
+				'publish',
+				'available',
+				'unavailable'
 			]]
 		}
 	},

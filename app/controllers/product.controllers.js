@@ -5,7 +5,7 @@ const fs = require('fs/promises');
 const path = require('path');
 
 // database instance
-const { Op } = require('sequelize');
+const { Op, DataTypes} = require('sequelize');
 const Business = require('../db/models/business');
 const Product = require('../db/models/product');
 const ProductMeta = require('../db/models/productmeta');
@@ -121,10 +121,36 @@ async function getAll(req, res, next) {
 }
 async function create(req, res, next) {
 	try {
+		const business = await Business.findOne({ where: { userId: req.user.id }});
+		if(!business) {
+			throw new BaseErr(
+				'BusinessDoesNotExist',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`The user's business not found.`
+			);
+		}
+
 		req.body["salePrice"] = calculateSalePrice(req.body.price, req.body.discount);
 		req.body["onlineSalePrice"] = calculateSalePrice(req.body.onlinePrice, req.body.onlineDiscount);
 
-		const product = await Product.create(req.body);
+		const product = await Product.create({
+			name: req.body.name,
+			barcode: req.body.barcode,
+			type: req.body.type,
+			price: req.body.price,
+			discount: req.body.discount,
+			salePrice: req.body.salePrice,
+			onlinePrice: req.body.onlinePrice,
+			onlineDiscount: req.body.onlineDiscount,
+			onlineSalePrice: req.body.onlineSalePrice,
+			stock: req.body.stock,
+			infiniteStock: req.body.infiniteStock,
+			onlineStock: req.body.onlineStock,
+			onlineSell: req.body.onlineSell,
+			description: req.body.description,
+			businessId: business.id
+		});
 		if(!product) {
 			throw new BaseErr(
 				'ProductNotCreated',
@@ -164,7 +190,24 @@ async function create(req, res, next) {
 				variation["onlineSalePrice"] = calculateSalePrice(variation.onlinePrice, variation.onlineDiscount);
 				variation["parentId"] = product.id;
 
-				const createdVariation = await Product.create(variation);
+				const createdVariation = await Product.create({
+					name: variation.name,
+					barcode: variation.barcode,
+					type: 'variation',
+					price: variation.price,
+					discount: variation.discount,
+					salePrice: variation.salePrice,
+					onlinePrice: variation.onlinePrice,
+					onlineDiscount: variation.onlineDiscount,
+					onlineSalePrice: variation.onlineSalePrice,
+					stock: variation.stock,
+					infiniteStock: variation.infiniteStock,
+					onlineStock: variation.onlineStock,
+					onlineSell: variation.onlineSell,
+					description: variation.description,
+					businessId: business.id,
+					parentId: variation.parentId
+				});
 				if(!createdVariation) {
 					throw new BaseErr(
 						'VariationProductNotCreated',
@@ -225,7 +268,7 @@ async function edit(req, res, next) {
 			await product.update({
 				salePrice: Math.floor(product.price - (product.price * product.discount) / 100),
 				onlineSalePrice: Math.floor(product.onlinePrice - (product.onlinePrice * product.onlineDiscount) / 100),
-				onlineStock: onlineSell ? product.onlineStock : 0,
+				onlineStock: product.onlineSell ? product.onlineStock : 0,
 				infiniteStock: (stock !== undefined) ? false : product.infiniteStock
 			});
 

@@ -57,11 +57,21 @@ async function getAll(req, res, next) {
 }
 async function create(req, res, next) {
 	try {
+		const business = await Business.findOne({ where: { userId: req.user.id }});
+		if (!business) {
+			throw new BaseErr(
+				'BusinessNotFound',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`The business does not exists.`
+			);
+		}
+
 		const category = await Category.create({
 			name: req.body.name,
 			slug: req.body.slug ? req.body.slug : generateSlug(req.body.name),
 			description: req.body.description,
-			businessId: req.business.id
+			businessId: business.id
 		});
 
 		if(!category) {

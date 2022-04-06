@@ -1,12 +1,13 @@
-// middlewares
-const { verifyToken, checkDomainAndKeys } = require('../../middlewares/auth.middlewares')
+'use strict';
 
-// controller
-const controller = require('../../controllers/business.controllers')
+const { Router } = require('express');
+const router = Router();
 
-// export apis
-module.exports = (app, prefix) => {
-    app.post(`${prefix}/business/check`, verifyToken, controller.check)
-    app.post(`${prefix}/business/check_domain`, [verifyToken, checkDomainAndKeys], controller.checkDomain)
-    app.post(`${prefix}/business/create`, [verifyToken, checkDomainAndKeys], controller.create)
-}
+const { verifyToken, checkDomainAndKeys } = require('../../middlewares/auth.middlewares');
+const { check, checkDomain, create } = require('../../controllers/business.controllers');
+
+router.post('/check', verifyToken, check);
+router.post('/check_domain', [verifyToken, checkDomainAndKeys], checkDomain);
+router.post('/create', [verifyToken, checkDomainAndKeys], create);
+
+module.exports = router;

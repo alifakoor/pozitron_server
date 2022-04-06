@@ -1,58 +1,59 @@
-// Modules
-const express = require('express')
-const cors = require("cors")
-const cookieParser = require('cookie-parser')
-const path = require('path')
-const db = require('./app/db')
-const adminRouter = require('./app/routes/index')
+// requirements
+const path = require('path');
+const express = require('express');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const { handler } = require('./app/errors/handlers');
 
-const app = express()
-const port = process.env.PORT || 8081
+// connection to the database
+require('./app/db/conn');
+require('./app/db/associations');
 
-const corsOptions = {
-    origin: ["https://dev.pozitronet.ir", "http://localhost:8080", "http://localhost:3000"]
-}
-app.use(cors(corsOptions))
+// routes & APIs
+const adminRouter = require('./app/routes/index');
+const api = require('./app/api/v1');
 
-app.set('view engine', 'ejs')
-app.set('views', path.join(__dirname, './app/views'))
-app.use(express.static(path.join(__dirname, './app/public')))
-app.use(cookieParser())
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+// create app
+const app = express();
+
+// cors options
+app.use(cors({ origin: process.env.CORS_DOMAINS.split('&&') }));
+
+// set view engine & public folder
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, './app/views'));
+app.use(express.static(path.join(__dirname, './app/public')));
+
+// set parsers
+app.use(cookieParser());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // APIs - version 1
-require('./app/api/v1')(app)
+// require('./app/api/v1')(app);
+app.use('/api/v1', api);
 
 // Routes
 // require('./app/routes')(app)
-app.use('/admin', adminRouter)
+app.use('/admin', adminRouter);
 
-db.sequelize
-    .sync({
-        // force: true,
-        logging: false
-    })
-    .then(() => {
-        app.listen(port, () => {
-            console.log(`Server is Running on port ${port}`)
-        })
-    })
-    .catch(err => {
-        console.log(err)
-    })
+// 404 handler
+app.use(function(req, res, next) {
+	next({ status: 404, success: false, message: '404, Not Found!' });
+});
+
+// error handler
+app.use(handler);
+
+// run app
+app.listen(process.env.PORT || 3000, () => {
+	console.log(`Server is Running on port ${process.env.PORT || 3000}`);
+});
+
+
+
+
 
 // SOCKET
 // const { socket } = require('./app/middlewares')
 // global.SOCKET = new socket(httpServer)
-
-// statics files
-// app.use(express.static('app/statics'))
-
-// const httpServer = require("http").createServer(app)
-// httpServer.listen(PORT, () => {
-//     console.log(`Server is Running on port ${PORT}`)
-// })
-
-// some changes for test
-// some another changes for test

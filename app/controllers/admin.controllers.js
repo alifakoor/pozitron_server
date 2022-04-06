@@ -4,7 +4,7 @@
 const jwt = require('jsonwebtoken')
 
 // database instance
-const db = require('../db');
+const db = require('../db/conn');
 
 // functions
 function loginPage(req, res) {

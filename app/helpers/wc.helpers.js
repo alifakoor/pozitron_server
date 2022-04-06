@@ -111,29 +111,112 @@ class WcHelpers {
 	}
 	async createWebhooks(businessId, businessKey) {
 		try {
-			const productBaseUrl = 'https://api-dev.pozitronet.ir/products/webhooks'
-			const orderBaseUrl = 'https://api-dev.pozitronet.ir/orders/webhooks'
-			const webhooks = [
-					{ name: 'product create', topic: 'product.created', delivery_url: `${productBaseUrl}/create/${businessId}/${businessKey}` },
-					{ name: 'product update', topic: 'product.updated', delivery_url: `${productBaseUrl}/update/${businessId}/${businessKey}` },
-					{ name: 'product delete', topic: 'product.deleted', delivery_url: `${productBaseUrl}/delete/${businessId}/${businessKey}` },
-					{ name: 'order create', topic: 'order.created', delivery_url: `${orderBaseUrl}/create/${businessId}/${businessKey}` },
-					{ name: 'order update', topic: 'order.updated', delivery_url: `${orderBaseUrl}/update/${businessId}/${businessKey}` },
-					{ name: 'order delete', topic: 'order.deleted', delivery_url: `${orderBaseUrl}/delete/${businessId}/${businessKey}` }
-			]
-			await Promise.all([
-				await this.api.post('webhooks', webhooks[0]),
-				await this.api.post('webhooks', webhooks[1]),
-				await this.api.post('webhooks', webhooks[2]),
-				await this.api.post('webhooks', webhooks[3]),
-				await this.api.post('webhooks', webhooks[4]),
-				await this.api.post('webhooks', webhooks[5]),
-			])
-			return true
+			const sections = [ 'product', 'order' ];
+			const methods = [ 'create', 'update', 'delete' ];
+
+			for(const section of sections) {
+				for(const method of methods) {
+					const webhook = {
+						name: `${section} ${method}`,
+						topic: `${section}.${method}d`,
+						delivery_url: `${process.env.WCH_BASE_URL}/${section}s/webhook/${method}/${businessId}/${businessKey}`
+					};
+
+					await this.api.post('webhooks', webhook);
+				}
+			}
+			return true;
 		} catch(err) {
-			console.log(`creating webhook has failed, with error:\n${err}`)
-			return false
+			console.log(`creating webhook has failed, with error:\n${err}`);
+			return false;
 		}
+	}
+	async getAllCategories() {
+		try {
+			let categories = []
+			let totalCategories = 0
+			let totalPages = 1
+			for (let page = 1; page <= totalPages; page++) {
+				const { headers, data } = await this.api.get('products/categories', {
+					page: page,
+					per_page: 100,
+					orderby: 'id',
+					order: 'asc'
+				})
+
+				if (page === 1) {
+					totalPages = headers['x-wp-totalpages']
+					totalCategories = headers['x-wp-total']
+				}
+				categories.push(...data)
+			}
+
+			return { success: true, categories }
+		} catch(err) {
+			console.log('cannot fetch categories from getAllCategories()')
+			console.log(err)
+			return { success: false }
+		}
+	}
+	async getAllTags() {
+		try {
+			let tags = []
+			let totalTags = 0
+			let totalPages = 1
+			for (let page = 1; page <= totalPages; page++) {
+				const { headers, data } = await this.api.get('products/tags', {
+					page: page,
+					per_page: 100,
+					orderby: 'id',
+					order: 'asc'
+				})
+
+				if (page === 1) {
+					totalPages = headers['x-wp-totalpages']
+					totalTags = headers['x-wp-total']
+				}
+				tags.push(...data)
+			}
+
+			return { success: true, tags }
+		} catch(err) {
+			console.log('cannot fetch tags from getAllTags()')
+			console.log(err)
+			return { success: false }
+		}
+	}
+	async getAllOrders() {
+		try {
+			let orders = []
+			let totalTags = 0
+			let totalPages = 1
+			for (let page = 1; page <= totalPages; page++) {
+				const { headers, data } = await this.api.get('orders', {
+					page: page,
+					per_page: 100,
+					orderby: 'id',
+					order: 'asc'
+				})
+
+				if (page === 1) {
+					totalPages = headers['x-wp-totalpages']
+					totalTags = headers['x-wp-total']
+				}
+				orders.push(...data)
+			}
+
+			return { success: true, orders }
+		} catch(err) {
+			console.log('cannot fetch orders from getAllOrders()')
+			console.log(err)
+			return { success: false }
+		}
+	}
+	async updateOrder({ id, status }) {
+		return await this.api.put(`orders/${id}`, { status })
+	}
+	async deleteOrder(id) {
+		return await this.api.delete(`orders/${+id}`);
 	}
 }
 

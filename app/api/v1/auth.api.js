@@ -1,7 +1,12 @@
-const controller = require('../../controllers/user.controllers')
-const middleware = require('../../middlewares/auth.middlewares')
+'use strict'
 
-module.exports = (app, prefix) => {
-    app.post(`${prefix}/auth`, middleware.checkPhone, controller.loginOrRegister)
-    app.post(`${prefix}/auth/verify`, [middleware.checkPhone, middleware.checkCode], controller.verifyCode)
-}
+const { Router } = require('express');
+const router = Router();
+
+const { checkPhone, checkCode } = require('../../middlewares/auth.middlewares');
+const { loginOrRegister, verifyCode } = require('../../controllers/user.controllers');
+
+router.post('', checkPhone, loginOrRegister);
+router.post('/verify', [ checkPhone, checkCode ], verifyCode );
+
+module.exports = router;

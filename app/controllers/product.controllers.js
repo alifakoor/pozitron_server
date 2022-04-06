@@ -1,15 +1,24 @@
 'use strict'
 
 // dependencies
-const fs = require('fs/promises')
-const path = require('path')
+const fs = require('fs/promises');
+const path = require('path');
 
 // database instance
-const db = require('../db')
+const { Op, DataTypes} = require('sequelize');
+const Business = require('../db/models/business');
+const Product = require('../db/models/product');
+const ProductMeta = require('../db/models/productmeta');
+const ProductImage = require('../db/models/productImage');
+
+// error handlers
+const BaseErr = require('../errors/baseErr');
+const httpStatusCodes = require('../errors/httpStatusCodes');
 
 // helpers
-const WcHelpers = require('../helpers/wc.helpers')
-const { calculateDiscount, calculateSalePrice } = require('../helpers/product.helpers')
+const WcHelpers = require('../helpers/wc.helpers');
+const { calculateDiscount, calculateSalePrice } = require('../helpers/product.helpers');
+const Upload = require('../utils/upload');
 
 // functions
 function getMeta(wcProduct, productId) {
@@ -57,205 +66,361 @@ function getImages(wcProduct, productId) {
 	}
 	return productImages
 }
-function getAll(req, res) {
-	db.business
-			.findOne({
-				where: {
-					userId: req.user.id
-				}
-			})
-			.then(business => {
-				if (business) {
-					db.product
-							.findAll({
-								where: {
-									type: {
-										[db.Op.in]: ['simple', 'variation']
-									},
-									businessId: business.id
-								},
-								include: [
-									{
-										model: db.productmeta,
-										as: 'meta'
-									},
-									{
-										model: db.productImage,
-										as: 'images',
-										required: false
-									}
-								]
-							})
-							.then(products => {
-								if (products.length) {
-									res.status(200).json({
-										success: true,
-										message: 'The list of products found successfully.',
-										data: products
-									})
-								} else {
-									res.status(200).json({
-										success: false,
-										message: 'There is not any products.'
-									})
-								}
-
-							})
-							.catch(err => {
-								console.log(err)
-								res.status(400).send({ success: false, message: 'something wrong is happened in list of products.' })
-							})
-				} else {
-					res.status(200).send({ success: false, message: 'user business not found.' })
-				}
-			})
-			.catch(err => {
-				console.log(err)
-				res.status(500).send({ success: false, message: 'user business not found.' })
-			})
-}
-async function create(req, res) {
+async function getAll(req, res, next) {
 	try {
-		req.body["salePrice"] = calculateSalePrice(req.body.price, req.body.discount)
-		req.body["onlineSalePrice"] = calculateSalePrice(req.body.onlinePrice, req.body.onlineDiscount)
+		const business = await Business.findOne({ where: { userId: req.user.id }});
+		if(!business) {
+			throw new BaseErr(
+				'BusinessDoesNotExist',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`The user business not found.`
+			);
+		}
 
-		const product = await db.product.create(req.body)
+		// console.log(Object.keys(Business.prototype));
+
+		const products = await business.getProducts({
+			where: {
+				type: {
+					[Op.in]: ['simple', 'variation']
+				},
+				businessId: business.id
+			},
+			include: [
+				{
+					model: ProductMeta,
+					as: 'meta'
+				},
+				{
+					model: ProductImage,
+					as: 'images',
+					required: false
+				}
+			]
+		});
+		if(!products.length) {
+			throw new BaseErr(
+				'BusinessDoesNotHaveProducts',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`There is not any products.`
+			);
+		}
+
+		return res.status(200).json({
+			success: true,
+			message: 'The list of products found successfully.',
+			data: products,
+			domain: business.domain
+		});
+
+	} catch(e) {
+		next(e);
+	}
+}
+async function create(req, res, next) {
+	try {
+		const business = await Business.findOne({ where: { userId: req.user.id }});
+		if(!business) {
+			throw new BaseErr(
+				'BusinessDoesNotExist',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`The user's business not found.`
+			);
+		}
+
+		req.body["salePrice"] = calculateSalePrice(req.body.price, req.body.discount);
+		req.body["onlineSalePrice"] = calculateSalePrice(req.body.onlinePrice, req.body.onlineDiscount);
+
+		const product = await Product.create({
+			name: req.body.name,
+			barcode: req.body.barcode,
+			type: req.body.type,
+			price: req.body.price,
+			discount: req.body.discount,
+			salePrice: req.body.salePrice,
+			onlinePrice: req.body.onlinePrice,
+			onlineDiscount: req.body.onlineDiscount,
+			onlineSalePrice: req.body.onlineSalePrice,
+			stock: req.body.stock,
+			infiniteStock: req.body.infiniteStock,
+			onlineStock: req.body.onlineStock,
+			onlineSell: req.body.onlineSell,
+			description: req.body.description,
+			businessId: business.id
+		});
+		if(!product) {
+			throw new BaseErr(
+				'ProductNotCreated',
+				httpStatusCodes.NOT_IMPLEMENTED,
+				true,
+				`The product has not been created successfully.`
+			);
+		}
 
 		if (req.body.weight) {
-			await db.productmeta.create({ metaKey: 'weight', metaValue: req.body.weight, productId: product.id })
+			await ProductMeta.create({
+				metaKey: 'weight',
+				metaValue: req.body.weight,
+				productId: product.id
+			});
 		}
 		if (req.body.dimensions) {
-			await db.productmeta.create({ metaKey: 'dimensions', metaValue: JSON.stringify(req.body.dimensions), productId: product.id })
+			await ProductMeta.create({
+				metaKey: 'dimensions',
+				metaValue: JSON.stringify(req.body.dimensions),
+				productId: product.id
+			});
+		}
+		if (req.body.image?.length) {
+			for (const img of req.body.image) {
+				await ProductImage.create({
+					src: img.src,
+					name: img.name,
+					productId: product.id
+				});
+			}
 		}
 
 		if (req.body.type === 'variable') {
 			for (const variation of req.body.variations) {
-				variation["salePrice"] = calculateSalePrice(variation.price, variation.discount)
-				variation["onlineSalePrice"] = calculateSalePrice(variation.onlinePrice, variation.onlineDiscount)
-				variation["parentId"] = product.id
+				variation["salePrice"] = calculateSalePrice(variation.price, variation.discount);
+				variation["onlineSalePrice"] = calculateSalePrice(variation.onlinePrice, variation.onlineDiscount);
+				variation["parentId"] = product.id;
 
-				const createdVariation = await db.product.create(variation)
+				const createdVariation = await Product.create({
+					name: variation.name,
+					barcode: variation.barcode,
+					type: 'variation',
+					price: variation.price,
+					discount: variation.discount,
+					salePrice: variation.salePrice,
+					onlinePrice: variation.onlinePrice,
+					onlineDiscount: variation.onlineDiscount,
+					onlineSalePrice: variation.onlineSalePrice,
+					stock: variation.stock,
+					infiniteStock: variation.infiniteStock,
+					onlineStock: variation.onlineStock,
+					onlineSell: variation.onlineSell,
+					description: variation.description,
+					businessId: business.id,
+					parentId: variation.parentId
+				});
+				if(!createdVariation) {
+					throw new BaseErr(
+						'VariationProductNotCreated',
+						httpStatusCodes.NOT_IMPLEMENTED,
+						true,
+						`The variation product has not been created successfully.`
+					);
+				}
 
 				if (variation.weight) {
-					await db.productmeta.create({ metaKey: 'weight', metaValue: variation.weight, productId: createdVariation.id })
+					await ProductMeta.create({
+						metaKey: 'weight',
+						metaValue: variation.weight,
+						productId: createdVariation.id
+					});
 				}
 				if (variation.dimensions) {
-					await db.productmeta.create({ metaKey: 'dimensions', metaValue: JSON.stringify(variation.dimensions), productId: createdVariation.id })
+					await ProductMeta.create({
+						metaKey: 'dimensions',
+						metaValue: JSON.stringify(variation.dimensions),
+						productId: createdVariation.id
+					});
 				}
 			}
 		}
 
-		return res.json({ success: true, message: 'The product has been created successfully.', data: product })
-	} catch(err) {
-		console.log(err)
-		return res.json({ success: false, message: err.message })
+		return res.json({
+			success: true,
+			message: 'The products has been created successfully.',
+			data: product
+		});
+	} catch(e) {
+		next(e);
 	}
 }
-async function edit(req, res) {
-	const { price, discount, stock, onlinePrice, onlineDiscount, onlineStock, onlineSell } = req.body.fields
-	const business = await db.business.findOne({where: {userId: req.user.id}})
-	if (!business) return res.json({ success: false, message: 'The business does not exist.' })
+async function edit(req, res, next) {
+	try {
+		const { price, discount, stock, onlinePrice, onlineDiscount, onlineStock, onlineSell } = req.body.fields;
+		const business = await Business.findOne({ where: { userId: req.user.id }});
+		if (!business) {
+			throw new BaseErr(
+				'BusinessNotFound',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`The business does not exists.`
+			);
+		}
 
-	const wc = new WcHelpers(`https://${business.domain}`, business.key, business.secret)
+		const wc = new WcHelpers(`https://${business.domain}`, business.key, business.secret);
 
-	let done = true
-	for (const id of req.body.ids) {
+		let done = true;
+		for (const id of req.body.ids) {
 
-		const product = await db.product.findByPk(id)
-		if (product?.businessId !== business.id) continue
+			const product = await Product.findByPk(id);
+			if (product?.businessId !== business.id) continue;
 
-		await product.update({ price, discount, stock, onlinePrice, onlineDiscount, onlineStock, onlineSell })
-		await product.update({
-			salePrice: Math.floor(product.price - (product.price * product.discount) / 100),
-			onlineSalePrice: Math.floor(product.onlinePrice - (product.onlinePrice * product.onlineDiscount) / 100),
-			infiniteStock: (stock !== undefined) ? false : product.infiniteStock
-		})
+			await product.update({ price, discount, stock, onlinePrice, onlineDiscount, onlineStock, onlineSell });
+			await product.update({
+				salePrice: Math.floor(product.price - (product.price * product.discount) / 100),
+				onlineSalePrice: Math.floor(product.onlinePrice - (product.onlinePrice * product.onlineDiscount) / 100),
+				onlineStock: product.onlineSell ? product.onlineStock : 0,
+				infiniteStock: (stock !== undefined) ? false : product.infiniteStock
+			});
 
-		if (product.type === 'simple') {
-			const updated = await wc.updateProduct({
-				id: product.ref,
-				onlinePrice: product.onlinePrice,
-				onlineSalePrice: product.onlineSalePrice,
-				onlineStock: product.onlineStock
-			})
-			if (!updated) {
-				done = false
-				break
+			if (product.type === 'simple') {
+				const updated = await wc.updateProduct({
+					id: product.ref,
+					onlinePrice: product.onlinePrice,
+					onlineSalePrice: product.onlineSalePrice,
+					onlineStock: product.onlineStock
+				});
+				if (!updated) {
+					done = false;
+					break;
+				}
+			}
+			if (product.type === 'variation') {
+				const parent = await Product.findByPk(product.parentId)
+				const updated = await wc.updateProductVariation({
+					id: product.ref,
+					parentId: parent.ref,
+					onlinePrice: product.onlinePrice,
+					onlineSalePrice: product.onlineSalePrice,
+					onlineStock: product.onlineStock
+				});
+				if (!updated) {
+					done = false;
+					break;
+				}
 			}
 		}
-		if (product.type === 'variation') {
-			const parent = await db.product.findByPk(product.parentId)
-			const updated = await wc.updateProductVariation({
-				id: product.ref,
-				parentId: parent.ref,
-				onlinePrice: product.onlinePrice,
-				onlineSalePrice: product.onlineSalePrice,
-				onlineStock: product.onlineStock
-			})
-			if (!updated) {
-				done = false
-				break
-			}
-		}
-	}
 
-	if (done) {
+		if (!done) {
+			throw new BaseErr(
+				'EditNotSuccessful',
+				httpStatusCodes.NOT_IMPLEMENTED,
+				true,
+				`The products have NOT been updated successfully.`
+			);
+		}
+
 		return res.json({
 			success: true,
 			message: 'The products have been updated successfully.'
-		})
+		});
+
+	} catch(e) {
+		next(e);
 	}
-	return res.json({
-		success: false,
-		message: 'The products have NOT been updated successfully.'
-	})
 }
-async function remove(req, res) {
-	const business = await db.business.findOne({where: {userId: req.user.id}})
-	if (!business) return res.json({ success: false, message: 'The business does not exist.' })
-
-	const wc = new WcHelpers(`https://${business.domain}`, business.key, business.secret)
-	let done = true
-
-	for (const id of req.body.ids) {
-		const product = await db.product.findByPk(id)
-		if (product?.businessId !== business.id) continue
-
-		if (product.type === 'simple') {
-			const updated = await wc.deleteProduct(product.ref)
-			if (!updated) {
-				done = false
-				break
-			}
+async function remove(req, res, next) {
+	try {
+		const business = await Business.findOne({ where: { userId: req.user.id }});
+		if (!business) {
+			throw new BaseErr(
+				'BusinessNotFound',
+				httpStatusCodes.NOT_FOUND,
+				true,
+				`The business does not exists.`
+			);
 		}
-		if (product.type === 'variation') {
-			const parent = await db.product.findByPk(product.parentId)
-			const updated = await wc.deleteProductVariation(product.ref, parent.ref)
-			if (!updated) {
-				done = false
-				break
-			}
-		}
-		await product.destroy()
-	}
 
-	if (done) {
+		const wc = new WcHelpers(`https://${business.domain}`, business.key, business.secret);
+		let done = true;
+
+		for (const id of req.body.ids) {
+			const product = await Product.findByPk(id);
+			if (product?.businessId !== business.id) continue;
+
+			if (product.type === 'simple') {
+				const updated = await wc.deleteProduct(product.ref);
+				if (!updated) {
+					done = false;
+					break;
+				}
+			}
+			if (product.type === 'variation') {
+				const parent = await Product.findByPk(product.parentId);
+				const updated = await wc.deleteProductVariation(product.ref, parent.ref);
+				if (!updated) {
+					done = false;
+					break;
+				}
+			}
+			await product.destroy();
+		}
+
+		if (!done) {
+			throw new BaseErr(
+				'DeleteNotSuccessful',
+				httpStatusCodes.NOT_IMPLEMENTED,
+				true,
+				`The products have NOT been deleted successfully.`
+			);
+		}
+
 		return res.json({
 			success: true,
 			message: 'The products have been deleted successfully.'
-		})
+		});
+
+	} catch(e) {
+		next(e);
 	}
-	return res.json({
-		success: false,
-		message: 'The products have NOT been deleted successfully.'
-	})
+}
+async function upload(req, res, next) {
+	try {
+		const upload = new Upload('products');
+		await upload.single(req, res, 'image');
+		if (!req.file) {
+			throw new BaseErr(
+				'UploadFailed',
+				httpStatusCodes.NOT_IMPLEMENTED,
+				true,
+				`The file didn't upload successfully.`
+			);
+		}
+
+		const data = {
+			name: req.file.filename,
+			url: `/uploads/products/${req.file.filename}`
+		}
+		return res.send({ success: true, message: 'image uploaded.', data });
+
+	} catch(e) {
+		next(e);
+	}
+}
+async function removeUpload(req, res, next) {
+	try {
+		if (!req.params.name) {
+			throw new BaseErr(
+				'InvalidParams',
+				httpStatusCodes.NOT_ACCEPTABLE,
+				true,
+				`The name is required.`
+			);
+		}
+
+		await fs.unlink(path.join(__dirname, `../public/uploads/products/${req.params.name}`))
+
+		return res.send({ success: true, message: 'uploaded image removed.' });
+
+	} catch(e) {
+		next(e);
+	}
 }
 
 // handlers for webhooks action
 /*
-	both createWithWebhook and updateWithWebhook for variable product are the same,
-	because in woocommerce it calls product.update webhook for a variable,
-	after publish button has been clicked, the product.create webhook work for variables
+	both createWithWebhook and updateWithWebhook for variable products are the same,
+	because in woocommerce it calls products.update webhook for a variable,
+	after publish button has been clicked, the products.create webhook work for variables
  */
 async function logWebhookResponse(webhook, body) {
 	try {
@@ -271,12 +436,12 @@ async function logWebhookResponse(webhook, body) {
 	}
 
 }
-async function createdWithWebhook(req, res) {
+async function createdWithWebhook(req, res, next) {
 	try {
-		await logWebhookResponse('product create', req.body)
+		await logWebhookResponse('products create', req.body)
 
 		const { businessId, businessKey } = req.params
-		const business = await db.business.findByPk(businessId)
+		const business = await Business.findByPk(businessId)
 		if (business?.key !== businessKey) {
 			return res.send({
 				success: false,
@@ -300,46 +465,49 @@ async function createdWithWebhook(req, res) {
 			businessId
 		}
 		if (req.body.type === 'variation') {
-			const parent = await db.product.findOne({ where: { ref: req.body.parent_id, businessId } })
+			const parent = await Product.findOne({ where: { ref: req.body.parent_id, businessId } })
 			product['parentId'] = parent.id
 		}
 
-		// if there is some orphan variations
-		// if (req.body.type === 'variable') {
-		// 	const parent = await db.product.upsert(product)
-		// 	for (const variation of req.body.variations) {
-		// 		const productVariation = await db.product.findOne({ where: { ref: variation } })
-		// 		productVariation.update({ parentId: parent.id })
-		// 	}
-		// }
-		const [createdProduct] = await db.product.upsert(product)
+		/*
+			if there is some orphan variations
+			if (req.body.type === 'variable') {
+				const parent = await Product.upsert(products)
+				for (const variation of req.body.variations) {
+					const productVariation = await Product.findOne({ where: { ref: variation } })
+					productVariation.update({ parentId: parent.id })
+				}
+			}
+		*/
+		const [createdProduct] = await Product.upsert(product)
 
 		let productMeta = getMeta(req.body, createdProduct.id)
-		await db.productmeta.bulkCreate(productMeta, {
+		await ProductMeta.bulkCreate(productMeta, {
 			updateOnDuplicate: ['metaValue']
 		})
 		let productImages = getImages(req.body, createdProduct.id)
-		await db.productImage.bulkCreate(productImages, {
+		await ProductImage.bulkCreate(productImages, {
 			updateOnDuplicate: ['src', 'name']
 		})
 
-		return res.json({ success: false, message: 'The product has been created successfully. '})
+		return res.json({ success: false, message: 'The products has been created successfully. '})
 
-	} catch(err) {
-		console.log('cannot create product through webhooks.')
-		console.log(err)
-		return res.send({
-			success: false,
-			message: 'cannot create product through webhooks.'
-		})
+	} catch(e) {
+		next(e);
+		// console.log('cannot create products through webhooks.')
+		// console.log(err)
+		// return res.send({
+		// 	success: false,
+		// 	message: 'cannot create products through webhooks.'
+		// })
 	}
 }
-async function updatedWithWebhook(req, res) {
+async function updatedWithWebhook(req, res, next) {
 	try {
-		await logWebhookResponse('product update', req.body)
+		await logWebhookResponse('products update', req.body)
 
 		const { businessId, businessKey } = req.params
-		const business = await db.business.findByPk(businessId)
+		const business = await Business.findByPk(businessId)
 		if (business?.key !== businessKey) {
 			return res.send({
 				success: false,
@@ -364,68 +532,70 @@ async function updatedWithWebhook(req, res) {
 		}
 
 		// if (req.body.type === 'variable') {
-		// 	await db.product.upsert(data)
+		// 	await Product.upsert(data)
 		// } else {
-		// 	const product = await db.product.findOne({ where: { ref: req.body.id, businessId } })
-		// 	if (!product) {
+		// 	const products = await Product.findOne({ where: { ref: req.body.id, businessId } })
+		// 	if (!products) {
 		// 		return res.send({
 		// 			success: false,
-		// 			message: 'this product not found.'
+		// 			message: 'this products not found.'
 		// 		})
 		// 	}
-		// 	await product.update(data)
+		// 	await products.update(data)
 		// }
 
-		const [updatedProduct] = await db.product.upsert(product)
+		const [updatedProduct] = await Product.upsert(product)
 
 		let productMeta = getMeta(req.body, updatedProduct.id)
-		await db.productmeta.bulkCreate(productMeta, {
+		await ProductMeta.bulkCreate(productMeta, {
 			updateOnDuplicate: ['metaValue']
 		})
 		let productImages = getImages(req.body, updatedProduct.id)
-		await db.productImage.bulkCreate(productImages, {
+		await ProductImage.bulkCreate(productImages, {
 			updateOnDuplicate: ['src', 'name']
 		})
 
-		return res.json({ success: false, message: 'The product has been updated successfully. '})
+		return res.json({ success: false, message: 'The products has been updated successfully. '})
 
-	} catch(err) {
-		console.log('cannot update product through webhooks.')
-		console.log(err)
-		return res.send({
-			success: false,
-			message: 'cannot update product through webhooks.'
-		})
+	} catch(e) {
+		next(e);
+		// console.log('cannot update products through webhooks.')
+		// console.log(err)
+		// return res.send({
+		// 	success: false,
+		// 	message: 'cannot update products through webhooks.'
+		// })
 	}
 }
-async function deletedWithWebhook(req, res) {
+async function deletedWithWebhook(req, res, next) {
 	try {
-		await logWebhookResponse('product delete', req.body)
+		await logWebhookResponse('products delete', req.body)
 
 		const { businessId, businessKey } = req.params
-		const business = await db.business.findByPk(businessId)
+		const business = await Business.findByPk(businessId)
 		if (business?.key !== businessKey) {
 			return res.send({
 				success: false,
 				message: 'Your business key is not correct.'
 			})
 		}
-		const product = await db.product.findOne({ where: { ref: req.body.id, businessId } })
+		const product = await Product.findOne({ where: { ref: req.body.id, businessId } })
 		if (!product) {
 			return res.send({
 				success: false,
-				message: 'this product not found.'
+				message: 'this products not found.'
 			})
 		}
 
 		await product.destroy()
-	} catch(err) {
-		console.log('cannot delete product through webhooks.')
-		console.log(err)
-		return res.send({
-			success: false,
-			message: 'cannot delete product through webhooks.'
-		})
+	} catch(e) {
+		next(e);
+		// console.log('cannot delete products through webhooks.')
+		// console.log(err)
+		// return res.send({
+		// 	success: false,
+		// 	message: 'cannot delete products through webhooks.'
+		// })
 	}
 }
 
@@ -435,6 +605,8 @@ module.exports = {
 	create,
 	edit,
 	remove,
+	upload,
+	removeUpload,
 	createdWithWebhook,
 	updatedWithWebhook,
 	deletedWithWebhook

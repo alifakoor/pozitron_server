@@ -49,11 +49,3 @@ app.use(handler);
 app.listen(process.env.PORT || 3000, () => {
 	console.log(`Server is Running on port ${process.env.PORT || 3000}`);
 });
-
-
-
-
-
-// SOCKET
-// const { socket } = require('./app/middlewares')
-// global.SOCKET = new socket(httpServer)

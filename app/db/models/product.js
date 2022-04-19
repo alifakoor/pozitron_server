@@ -84,6 +84,10 @@ const Product = sequelize.define('product', {
 		type: DataTypes.INTEGER,
 		defaultValue: 0
 	},
+	reservationStock: {
+		type: DataTypes.INTEGER,
+		defaultValue: 0
+	},
 	onlineSell: {
 		type: DataTypes.BOOLEAN,
 		defaultValue: false

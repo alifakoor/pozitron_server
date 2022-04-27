@@ -19,6 +19,7 @@ const httpStatusCodes = require("../errors/httpStatusCodes");
 const { calculateDiscount } = require("../helpers/product.helpers");
 const { ORDER } = require("mysql/lib/PoolSelector");
 const WcHelpers = require("../helpers/wc.helpers");
+const Customer = require("../db/models/customer");
 
 // functions
 async function getAll(req, res, next) {
@@ -56,6 +57,9 @@ async function getAll(req, res, next) {
                     	}
                     ]
                 },
+                {
+                    model: Customer
+                }
             ],
         });
         if (!orders.length) {

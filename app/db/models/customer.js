@@ -9,7 +9,7 @@ const Customer = sequelize.define('customer', {
 	firstname: DataTypes.STRING,
 	lastname: DataTypes.STRING,
 	email: DataTypes.STRING,
-
+	phone: DataTypes.STRING,
 }, {
 	tableName: 'customers',
 	timestamps: true,
@@ -17,6 +17,10 @@ const Customer = sequelize.define('customer', {
 		{
 			unique: true,
 			fields: ['ref', 'businessId']
+		},
+		{
+			unique: true,
+			fields: ['phone', 'businessId']
 		}
 	]
 });

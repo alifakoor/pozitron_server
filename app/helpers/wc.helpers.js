@@ -248,6 +248,33 @@ class WcHelpers {
             return { success: false };
         }
     }
+    async getAllCustomers() {
+        try {
+            let customers = [];
+            let totalCustomers = 0;
+            let totalPages = 1;
+            for (let page = 1; page <= totalPages; page++) {
+                const { headers, data } = await this.api.get("customers", {
+                    page: page,
+                    per_page: 100,
+                    orderby: "id",
+                    order: "asc",
+                });
+
+                if (page === 1) {
+                    totalPages = headers["x-wp-totalpages"];
+                    totalCustomers = headers["x-wp-total"];
+                }
+                customers.push(...data);
+            }
+
+            return { success: true, customers };
+        } catch (err) {
+            console.log("cannot fetch customers from getAllOrders()");
+            console.log(err);
+            return { success: false };
+        }
+    }
     async updateOrder({ id, status }) {
         return await this.api.put(`orders/${id}`, { status });
     }

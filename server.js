@@ -17,7 +17,7 @@ const api = require('./app/api/v1');
 const app = express();
 
 // cors options
-app.use(cors({ origin: process.env.CORS_DOMAINS.split('&&') }));
+app.use(cors({ origin: '*' }));
 
 // set view engine & public folder
 app.set('view engine', 'ejs');

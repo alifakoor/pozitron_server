@@ -156,7 +156,11 @@ async function checkDomain(req, res, next) {
 async function create(req, res, next) {
 	try {
 		if(req.body.onlineBusiness == "false"){
-			return res.status(200).json({ success: true, message: 'business is online' })
+			const business = await Business.create({
+				title:req.body.title,
+				
+			});
+			return res.status(200).json({ success: true, message: 'offline bussines is create' })
 		}
 	
 		const existed = await Business.findOne({ where: { domain: req.body.domain }});

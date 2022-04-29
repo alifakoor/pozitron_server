@@ -8,5 +8,5 @@ const { loginOrRegister, verifyCode } = require('../../controllers/user.controll
 
 router.post('', checkPhone, loginOrRegister);
 router.post('/verify', [ checkPhone, checkCode ], verifyCode );
-
+// new
 module.exports = router;

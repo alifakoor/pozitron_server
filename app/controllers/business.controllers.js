@@ -133,6 +133,10 @@ async function check(req, res, next) {
 }
 async function checkDomain(req, res, next) {
 	try {
+		if(req.body.onlineBusiness == "false"){
+			return res.status(200).json({ success: true, message: 'business is online' })
+		}
+	
 		const wc = new WcHelpers(`https://${req.body.domain}`, req.body.key, req.body.secret);
 		const checkedWC = await wc.check();
 		if (!checkedWC) {
@@ -151,6 +155,10 @@ async function checkDomain(req, res, next) {
 }
 async function create(req, res, next) {
 	try {
+		if(req.body.onlineBusiness == "false"){
+			return res.status(200).json({ success: true, message: 'business is online' })
+		}
+	
 		const existed = await Business.findOne({ where: { domain: req.body.domain }});
 		if(existed) {
 			throw new BaseErr(

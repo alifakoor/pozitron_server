@@ -60,6 +60,10 @@ function verifyToken(req, res, next) {
 	});
 }
 function checkDomainAndKeys(req, res, next) {
+	if(req.body.onlineBusiness == "false"){
+		return res.status(200).json({ success: true, message: 'business is online' })
+	}
+
 	if (!req.body.domain || !req.body.key || !req.body.secret) {
 		return res.status(200).json({ success: false, message: 'The domain, key and secret fields are required.' });
 	}

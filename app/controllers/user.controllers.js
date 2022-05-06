@@ -1,10 +1,11 @@
 const jwt = require('jsonwebtoken');
 const SmsHelpers = require('../helpers/sms.helpers');
-
 const BaseErr = require('../errors/baseErr');
 const httpStatusCodes = require('../errors/httpStatusCodes');
+const shortHash = require('short-hash');
 
 const User = require('../db/models/user');
+const Business = require('../db/models/business')
 
 async function loginOrRegister(req, res, next) {
 	try {
@@ -24,12 +25,22 @@ async function loginOrRegister(req, res, next) {
 			code: sms.getCode(),
 			codeCreatedAt: Date.now()
 		});
+
+
 		user.setDataValue('existed', !created);
 		user.code = null;
 		user.codeCreatedAt = null;
 
 		const hasBusiness = await user.countBusinesses();
 		user.setDataValue('hasBusiness', !!hasBusiness);
+
+		if(!hasBusiness){
+			let hashPhone = shortHash(String(req.body.phone));
+			const business = await Business.create({
+				domain: `http://${hashPhone}.ir`,
+				userId: user.id
+			});
+		}
 
 		return res.json({
 			success: true,
@@ -81,6 +92,11 @@ async function verifyCode(req, res, next) {
 		}, process.env.JWT_SECRET, { expiresIn: +process.env.JWT_EXPIRATION || 86400 });
 
 		user.setDataValue('token', token);
+
+		// create a offline business with number phone
+
+		
+
 
 		return res.status(200).json({
 			success: true,

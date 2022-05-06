@@ -6,8 +6,8 @@ const sequelize = require('../conn');
 const Business = sequelize.define('business', {
 	domain: {
 		type: DataTypes.STRING(200),
-		allowNull: true,
-		// unique: true,
+		allowNull: false,
+		unique: true,
 		validate: {
 			// is: /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/i
 			isUrl: true

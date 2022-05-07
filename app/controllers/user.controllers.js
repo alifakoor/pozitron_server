@@ -37,7 +37,7 @@ async function loginOrRegister(req, res, next) {
 		if(!hasBusiness){
 			let hashPhone = shortHash(String(req.body.phone));
 			const business = await Business.create({
-				domain: `http://${hashPhone}.ir`,
+				domain: `${hashPhone}.pozitronet.ir`,
 				userId: user.id
 			});
 		}

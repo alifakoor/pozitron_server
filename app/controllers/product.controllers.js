@@ -505,6 +505,53 @@ async function removeUpload(req, res, next) {
     }
 }
 
+// handlers for socket
+async function getAllProduct(userId) {
+    try {
+        const business = await Business.findOne({ where: { userId } });
+        if (!business) {
+            throw new BaseErr(
+                "BusinessDoesNotExist",
+                httpStatusCodes.NOT_FOUND,
+                true,
+                `The user business not found.`
+            );
+        }
+
+        const products = await business.getProducts({
+            where: {
+                type: {
+                    [Op.in]: ["simple", "variation"],
+                },
+                businessId: business.id,
+            },
+            include: [
+                {
+                    model: ProductMeta,
+                    as: "meta",
+                },
+                {
+                    model: ProductImage,
+                    as: "images",
+                    required: false,
+                },
+            ],
+        });
+        if (!products.length) {
+            throw new BaseErr(
+                "BusinessDoesNotHaveProducts",
+                httpStatusCodes.NOT_FOUND,
+                true,
+                `There is not any products.`
+            );
+        }
+
+        return products;
+    } catch (e) {
+        console.log(e);
+    }
+}
+
 // handlers for webhooks action
 /*
 	both createWithWebhook and updateWithWebhook for variable products are the same,
@@ -716,4 +763,5 @@ module.exports = {
     createdWithWebhook,
     updatedWithWebhook,
     deletedWithWebhook,
+    getAllProduct,
 };

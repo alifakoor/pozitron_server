@@ -331,10 +331,15 @@ async function create(req, res, next) {
         for (const order of orders) {
             let customerId = null;
             if (order.customer_id) {
+                console.log("1>>>>>>>>>>",customerId);
+                console.log("4>>>>>>>>>>",order.customerId);
+                console.log("5>>>>>>>>>>",order.customer_id);
                 const foundedCustomer = await Customer.findOne({
                     where: { ref: order.customer_id },
                 });
                 customerId = foundedCustomer.id;
+                console.log("2>>>>>>>>>>",customerId);
+                console.log("3>>>>>>>>>>",foundedCustomer);
             } else {
                 let customer = await Customer.findOne({
                     where: { phone: order.billing.phone },

@@ -7,7 +7,7 @@
     "start": "NODE_ENV=production node server.js",
     "migrate": "cross-env NODE_ENV=production node app/db/migrate1.js",
     "migrate:force": "cross-env NODE_ENV=production FORCE=true node app/db/migrate.js",
-    "dev": "cross-env NODE_ENV=development nodemon server.js",
+    "dev": "cross-env NODE_ENV=development nodemon ./bin/www",
     "dev:migrate": "cross-env NODE_ENV=development node app/db/migrate.js",
     "dev:migrate:force": "cross-env NODE_ENV=development FORCE=true node app/db/migrate.js",
     "test": "cross-env NODE_ENV=test node server.js"

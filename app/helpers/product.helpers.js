@@ -16,8 +16,17 @@ function calculateSalePrice(regularPrice, discount) {
 	if (discount === 0) return regularPrice
 	return Math.floor(regularPrice * ((100 - discount) / 100))
 }
+function calculateDimension(length, width, height) {
+	if (!length && !width && !height) return false;
+	return {
+		length: length ? Number(length) : 0,
+		width: width ? Number(width) : 0,
+		height: height ? Number(height) : 0,
+	}
+}
 
 module.exports = {
 	calculateDiscount,
-	calculateSalePrice
+	calculateSalePrice,
+	calculateDimension
 }

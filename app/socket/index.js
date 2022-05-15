@@ -47,13 +47,13 @@ io.on("connection", (socket) => {
         }
     });
 
-    const products = await getAllProduct(1);
+    const products =  getAllProduct(1);
     io.emit("productList", { products });
 
     // socket.on("getProductList", async (data) => {
     // });
 
-    const orders = await getPendingOrders(1);
+    const orders =  getPendingOrders(1);
     io.emit("pendingOrders", { orders });
 
     // socket.on("getPendingOrders", async (data) => {

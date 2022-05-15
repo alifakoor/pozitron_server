@@ -8,10 +8,12 @@ const path = require("path");
 const Business = require("../db/models/business");
 const Product = require("../db/models/product");
 const ProductImage = require("../db/models/productImage");
+const ProductMeta = require("../db/models/productmeta");
 const Order = require("../db/models/order");
 const OrderHasProducts = require("../db/models/orderHasProducts");
 const Customer = require("../db/models/customer");
 const Address = require("../db/models/address");
+
 
 // error handlers
 const BaseErr = require("../errors/baseErr");
@@ -21,9 +23,61 @@ const httpStatusCodes = require("../errors/httpStatusCodes");
 const { calculateDiscount } = require("../helpers/product.helpers");
 const { ORDER } = require("mysql/lib/PoolSelector");
 const WcHelpers = require("../helpers/wc.helpers");
-// const Customer = require("../db/models/customer");
+const { type } = require("os");
+
 
 // functions
+
+function getMeta(wcProduct, productId) {
+    let productMeta = [];
+    if (wcProduct.weight?.length) {
+        productMeta.push({
+            metaKey: "weight",
+            metaValue: wcProduct.weight,
+            productId,
+        });
+    }
+    if (
+        wcProduct.dimensions.length ||
+        wcProduct.dimensions.width ||
+        wcProduct.dimensions.height
+    ) {
+        productMeta.push({
+            metaKey: "dimensions",
+            metaValue: JSON.stringify(wcProduct.dimensions),
+            productId,
+        });
+    }
+    if (wcProduct.attributes.length) {
+        productMeta.push({
+            metaKey: "attributes",
+            metaValue: JSON.stringify(wcProduct.attributes),
+            productId,
+        });
+    }
+    if (wcProduct._links?.self) {
+        productMeta.push({
+            metaKey: "links",
+            metaValue: JSON.stringify(wcProduct._links.self),
+            productId,
+        });
+    }
+    return productMeta;
+}
+function getImages(wcProduct, productId) {
+    let productImages = [];
+    if (wcProduct.images?.length) {
+        for (const img of wcProduct.images) {
+            productImages.push({
+                src: img.src,
+                name: img.name,
+                productId,
+            });
+        }
+    }
+    return productImages;
+}
+
 async function getAll(req, res, next) {
     try {
         const business = await Business.findOne({
@@ -54,7 +108,20 @@ async function getAll(req, res, next) {
                     		left: true,
                     		attributes: ['id'],
                     		include: [
-                    			{ model: ProductImage, as: 'images', attributes: ['src'] }
+                    			{ 
+                                model: ProductImage,
+                                as: 'images', 
+                                attributes: ['src'] 
+                            },
+                            {
+                                model: ProductMeta,
+                                as: "meta",
+                            },
+                            {
+                                model: ProductImage,
+                                as: "images",
+                                required: false,
+                            },
                     		]
                     	}
                     ]
@@ -143,7 +210,9 @@ async function create(req, res, next) {
             name: product.name,
             price: product.price,
             onlinePrice: product.onlinePrice,
+            type:product.type,
             onlineDiscount: product.onlineDiscount,
+            discount: product.discount,
             onlineSalePrice: product.onlineSalePrice,
             total: product.price,
             productId: product.id,

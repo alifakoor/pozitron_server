@@ -21,6 +21,7 @@ const httpStatusCodes = require("../errors/httpStatusCodes");
 const { calculateDiscount } = require("../helpers/product.helpers");
 const { ORDER } = require("mysql/lib/PoolSelector");
 const WcHelpers = require("../helpers/wc.helpers");
+const { type } = require("os");
 
 
 // functions
@@ -143,7 +144,9 @@ async function create(req, res, next) {
             name: product.name,
             price: product.price,
             onlinePrice: product.onlinePrice,
+            type:product.type,
             onlineDiscount: product.onlineDiscount,
+            discount: product.discount,
             onlineSalePrice: product.onlineSalePrice,
             total: product.price,
             productId: product.id,

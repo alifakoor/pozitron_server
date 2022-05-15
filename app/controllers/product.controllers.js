@@ -379,14 +379,14 @@ async function edit(req, res, next) {
             }
         }
 
-        if (!done) {
-            throw new BaseErr(
-                "EditNotSuccessful",
-                httpStatusCodes.NOT_IMPLEMENTED,
-                true,
-                `The products have NOT been updated successfully.`
-            );
-        }
+        // if (!done) {
+        //     throw new BaseErr(
+        //         "EditNotSuccessful",
+        //         httpStatusCodes.NOT_IMPLEMENTED,
+        //         true,
+        //         `The products have NOT been updated successfully.`
+        //     );
+        // }
 
         return res.json({
             success: true,

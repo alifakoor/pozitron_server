@@ -8,6 +8,6 @@ const { check, checkDomain, create } = require('../../controllers/business.contr
 
 router.post('/check', verifyToken, check);
 router.post('/check_domain', [verifyToken, checkDomainAndKeys], checkDomain);
-router.post('/create', [verifyToken, checkDomainAndKeys], create);
+router.post('/create', verifyToken, create);
 
 module.exports = router;

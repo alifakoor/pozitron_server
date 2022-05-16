@@ -15,14 +15,20 @@ const Business = sequelize.define('business', {
 	},
 	title: DataTypes.STRING(150),
 	description:  DataTypes.TEXT,
+	onlineBusiness: {
+		type: DataTypes.BOOLEAN,
+		defaultValue: false,
+	},
 	key: {
 		type: DataTypes.STRING(50),
+		allowNull: true,
 		validate: {
 			is: /^(ck_)(.+)/i
 		}
 	},
 	secret: {
 		type: DataTypes.STRING(50),
+		allowNull: true,
 		validate: {
 			is: /^(cs_)(.+)/i
 		}

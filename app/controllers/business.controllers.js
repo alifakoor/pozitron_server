@@ -143,21 +143,19 @@ async function check(req, res, next) {
     }
 }
 async function checkDomain(req, res, next) {
-    try {
-        const wc = new WcHelpers(
-            `https://${req.body.domain}`,
-            req.body.key,
-            req.body.secret
-        );
-        const checkedWC = await wc.check();
-        if (!checkedWC) {
-            throw new BaseErr(
-                "WoocommerceNotConnected",
-                httpStatusCodes.NOT_ACCEPTABLE,
-                true,
-                `The domain or keys are not correct.`
-            );
-        }
+	try {
+
+	
+		const wc = new WcHelpers(`https://${req.body.domain}`, req.body.key, req.body.secret);
+		const checkedWC = await wc.check();
+		if (!checkedWC) {
+			throw new BaseErr(
+				'WoocommerceNotConnected',
+				httpStatusCodes.NOT_ACCEPTABLE,
+				true,
+				`The domain or keys are not correct.`
+			);
+		}
 
         return res.send({
             success: true,
@@ -168,18 +166,24 @@ async function checkDomain(req, res, next) {
     }
 }
 async function create(req, res, next) {
-    try {
-        const existed = await Business.findOne({
-            where: { domain: req.body.domain },
-        });
-        if (existed) {
-            throw new BaseErr(
-                "DomainAlreadyExisted",
-                httpStatusCodes.NOT_ACCEPTABLE,
-                true,
-                "The domain already existed."
-            );
-        }
+	try {
+		if(req.body.onlineBusiness == "false"){
+			const business = await Business.create({
+				title:req.body.title,
+				
+			});
+			return res.status(200).json({ success: true, message: 'offline bussines is create' })
+		}
+	
+		const existed = await Business.findOne({ where: { domain: req.body.domain }});
+		if(existed) {
+			throw new BaseErr(
+				'DomainAlreadyExisted',
+				httpStatusCodes.NOT_ACCEPTABLE,
+				true,
+				'The domain already existed.'
+			);
+		}
 
         const wc = new WcHelpers(
             `https://${req.body.domain}`,

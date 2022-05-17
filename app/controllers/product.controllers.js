@@ -159,7 +159,7 @@ async function create(req, res, next) {
             req.body.height
         );
 
-        if (onlineBusiness===true) {
+        if (!!business.onlineBusiness) {
             const wc = new WcHelpers(
                 `https://${business.domain}`,
                 business.key,
@@ -177,7 +177,7 @@ async function create(req, res, next) {
             }
         }
         const product = await Product.create({
-            ref: id,
+            // ref: id,
             name: req.body.name,
             barcode: req.body.barcode,
             type: req.body.type,

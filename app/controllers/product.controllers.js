@@ -159,20 +159,22 @@ async function create(req, res, next) {
             req.body.height
         );
 
-        const wc = new WcHelpers(
-            `https://${business.domain}`,
-            business.key,
-            business.secret
-        );
-
-        const { success, message, id } = await wc.createProduct(req.body);
-        if (!success) {
-            throw new BaseErr(
-                "ProductNotCreated",
-                httpStatusCodes.INTERNAL_SERVER_ERROR,
-                true,
-                message
+        if (onlineBusiness===true) {
+            const wc = new WcHelpers(
+                `https://${business.domain}`,
+                business.key,
+                business.secret
             );
+    
+            const { success, message, id } = await wc.createProduct(req.body);
+            if (!success) {
+                throw new BaseErr(
+                    "ProductNotCreated",
+                    httpStatusCodes.INTERNAL_SERVER_ERROR,
+                    true,
+                    message
+                );
+            }
         }
         const product = await Product.create({
             ref: id,

@@ -320,11 +320,13 @@ async function edit(req, res, next) {
             );
         }
 
-        const wc = new WcHelpers(
-            `https://${business.domain}`,
-            business.key,
-            business.secret
-        );
+        if (!!business.onlineBusiness) {
+            const wc = new WcHelpers(
+                `https://${business.domain}`,
+                business.key,
+                business.secret
+            );
+        }
 
         let done = true;
         for (const id of req.body.ids) {
@@ -411,12 +413,15 @@ async function remove(req, res, next) {
                 `The business does not exists.`
             );
         }
+        
+        if (!!business.onlineBusiness) {
+            const wc = new WcHelpers(
+                `https://${business.domain}`,
+                business.key,
+                business.secret
+            );
+        }
 
-        const wc = new WcHelpers(
-            `https://${business.domain}`,
-            business.key,
-            business.secret
-        );
         let done = true;
 
         for (const id of req.body.ids) {

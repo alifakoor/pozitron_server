@@ -429,25 +429,25 @@ async function remove(req, res, next) {
             const product = await Product.findByPk(id);
             if (product?.businessId !== business.id) continue;
             if (!!business.onlineBusiness) {
-            if (product.type === "simple") {
-                const updated = await wc.deleteProduct(product.ref);
-                if (!updated) {
-                    done = false;
-                    break;
+                if (product.type === "simple") {
+                    const updated = await wc.deleteProduct(product.ref);
+                    if (!updated) {
+                        done = false;
+                        break;
+                    }
+                }
+                if (product.type === "variation") {
+                    const parent = await Product.findByPk(product.parentId);
+                    const updated = await wc.deleteProductVariation(
+                        product.ref,
+                        parent.ref
+                    );
+                    if (!updated) {
+                        done = false;
+                        break;
+                    }
                 }
             }
-            if (product.type === "variation") {
-                const parent = await Product.findByPk(product.parentId);
-                const updated = await wc.deleteProductVariation(
-                    product.ref,
-                    parent.ref
-                );
-                if (!updated) {
-                    done = false;
-                    break;
-                }
-            }
-        }
             await product.destroy();
         }
 

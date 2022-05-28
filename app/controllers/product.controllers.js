@@ -165,7 +165,7 @@ async function create(req, res, next) {
                 business.key,
                 business.secret
             );
-    
+
             const { success, message, id } = await wc.createProduct(req.body);
             if (!success) {
                 throw new BaseErr(
@@ -348,37 +348,38 @@ async function edit(req, res, next) {
                 ),
                 onlineSalePrice: Math.floor(
                     product.onlinePrice -
-                        (product.onlinePrice * product.onlineDiscount) / 100
+                    (product.onlinePrice * product.onlineDiscount) / 100
                 ),
                 onlineStock: product.onlineSell ? product.onlineStock : 0,
                 infiniteStock:
                     stock !== undefined ? false : product.infiniteStock,
             });
-
-            if (product.type === "simple") {
-                const updated = await wc.updateProduct({
-                    // id: product.ref,
-                    onlinePrice: product.onlinePrice,
-                    onlineSalePrice: product.onlineSalePrice,
-                    onlineStock: product.onlineStock,
-                });
-                if (!updated) {
-                    done = false;
-                    break;
+            if (!!business.onlineBusiness) {
+                if (product.type === "simple") {
+                    const updated = await wc.updateProduct({
+                        id: product.ref,
+                        onlinePrice: product.onlinePrice,
+                        onlineSalePrice: product.onlineSalePrice,
+                        onlineStock: product.onlineStock,
+                    });
+                    if (!updated) {
+                        done = false;
+                        break;
+                    }
                 }
-            }
-            if (product.type === "variation") {
-                const parent = await Product.findByPk(product.parentId);
-                const updated = await wc.updateProductVariation({
-                    // id: product.ref,
-                    // parentId: parent.ref,
-                    onlinePrice: product.onlinePrice,
-                    onlineSalePrice: product.onlineSalePrice,
-                    onlineStock: product.onlineStock,
-                });
-                if (!updated) {
-                    done = false;
-                    break;
+                if (product.type === "variation") {
+                    const parent = await Product.findByPk(product.parentId);
+                    const updated = await wc.updateProductVariation({
+                        id: product.ref,
+                        parentId: parent.ref,
+                        onlinePrice: product.onlinePrice,
+                        onlineSalePrice: product.onlineSalePrice,
+                        onlineStock: product.onlineStock,
+                    });
+                    if (!updated) {
+                        done = false;
+                        break;
+                    }
                 }
             }
         }
@@ -413,7 +414,7 @@ async function remove(req, res, next) {
                 `The business does not exists.`
             );
         }
-        
+
         if (!!business.onlineBusiness) {
             const wc = new WcHelpers(
                 `https://${business.domain}`,
@@ -561,9 +562,9 @@ async function getAllProduct(userId) {
 
 // handlers for webhooks action
 /*
-	both createWithWebhook and updateWithWebhook for variable products are the same,
-	because in woocommerce it calls products.update webhook for a variable,
-	after publish button has been clicked, the products.create webhook work for variables
+    both createWithWebhook and updateWithWebhook for variable products are the same,
+    because in woocommerce it calls products.update webhook for a variable,
+    after publish button has been clicked, the products.create webhook work for variables
  */
 async function logWebhookResponse(webhook, body) {
     try {
@@ -621,15 +622,15 @@ async function createdWithWebhook(req, res, next) {
         }
 
         /*
-			if there is some orphan variations
-			if (req.body.type === 'variable') {
-				const parent = await Product.upsert(products)
-				for (const variation of req.body.variations) {
-					const productVariation = await Product.findOne({ where: { ref: variation } })
-					productVariation.update({ parentId: parent.id })
-				}
-			}
-		*/
+            if there is some orphan variations
+            if (req.body.type === 'variable') {
+                const parent = await Product.upsert(products)
+                for (const variation of req.body.variations) {
+                    const productVariation = await Product.findOne({ where: { ref: variation } })
+                    productVariation.update({ parentId: parent.id })
+                }
+            }
+        */
         const [createdProduct] = await Product.upsert(product);
 
         let productMeta = getMeta(req.body, createdProduct.id);

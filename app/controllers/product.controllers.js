@@ -357,7 +357,7 @@ async function edit(req, res, next) {
 
             if (product.type === "simple") {
                 const updated = await wc.updateProduct({
-                    id: product.ref,
+                    // id: product.ref,
                     onlinePrice: product.onlinePrice,
                     onlineSalePrice: product.onlineSalePrice,
                     onlineStock: product.onlineStock,
@@ -370,8 +370,8 @@ async function edit(req, res, next) {
             if (product.type === "variation") {
                 const parent = await Product.findByPk(product.parentId);
                 const updated = await wc.updateProductVariation({
-                    id: product.ref,
-                    parentId: parent.ref,
+                    // id: product.ref,
+                    // parentId: parent.ref,
                     onlinePrice: product.onlinePrice,
                     onlineSalePrice: product.onlineSalePrice,
                     onlineStock: product.onlineStock,

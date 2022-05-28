@@ -428,7 +428,7 @@ async function remove(req, res, next) {
         for (const id of req.body.ids) {
             const product = await Product.findByPk(id);
             if (product?.businessId !== business.id) continue;
-
+            if (!!business.onlineBusiness) {
             if (product.type === "simple") {
                 const updated = await wc.deleteProduct(product.ref);
                 if (!updated) {
@@ -447,6 +447,7 @@ async function remove(req, res, next) {
                     break;
                 }
             }
+        }
             await product.destroy();
         }
 

@@ -252,20 +252,22 @@ async function edit(req, res, next) {
 
         const { status } = req.body;
 
-        const wc = new WcHelpers(
-            `https://${business.domain}`,
-            business.key,
-            business.secret
-        );
-
-        for (const id of req.body.ids) {
-            const order = await Order.findByPk(+id);
-            if (order?.businessId !== business.id) continue;
-
-            await wc.updateOrder({ id: order.ref, status });
-
-            order.status = status;
-            await order.save();
+        if (!!business.onlineBusiness) {
+            const wc = new WcHelpers(
+                `https://${business.domain}`,
+                business.key,
+                business.secret
+            );
+    
+            for (const id of req.body.ids) {
+                const order = await Order.findByPk(+id);
+                if (order?.businessId !== business.id) continue;
+    
+                await wc.updateOrder({ id: order.ref, status });
+    
+                order.status = status;
+                await order.save();
+            }
         }
 
         return res.json({
@@ -290,19 +292,21 @@ async function remove(req, res, next) {
             );
         }
 
-        const wc = new WcHelpers(
-            `https://${business.domain}`,
-            business.key,
-            business.secret
-        );
-
-        for (const id of req.body.ids) {
-            const order = await Order.findByPk(+id);
-            if (order?.businessId !== business.id) continue;
-
-            await wc.deleteOrder(order.ref);
-
-            await order.destroy();
+        if (!!business.onlineBusiness) {
+            const wc = new WcHelpers(
+                `https://${business.domain}`,
+                business.key,
+                business.secret
+            );
+    
+            for (const id of req.body.ids) {
+                const order = await Order.findByPk(+id);
+                if (order?.businessId !== business.id) continue;
+    
+                await wc.deleteOrder(order.ref);
+    
+                await order.destroy();
+            }
         }
 
         return res.json({

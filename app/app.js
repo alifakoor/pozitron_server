@@ -42,7 +42,7 @@ app.use(function(req, res, next) {
 	next({ status: 404, success: false, message: '404, Not Found!' });
 });
 
-// error handler
+////// error handler
 app.use(handler);
 
 module.exports = app;

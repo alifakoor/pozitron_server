@@ -1,5 +1,12 @@
 import { createServer } from "http";
 import { Server } from "socket.io";
+// const { Server } = require("socket.io");
+const jwt = require("jsonwebtoken");
+const {
+  addProductToOrder,
+  getPendingOrders,
+} = require("../controllers/order.controllers");
+const { getAllProduct } = require("../controllers/product.controllers");
 
 const httpServer = createServer();
 const io = new Server(httpServer, {

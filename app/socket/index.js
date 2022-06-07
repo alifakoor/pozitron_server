@@ -6,7 +6,7 @@ const {
 } = require("../controllers/order.controllers");
 const { getAllProduct } = require("../controllers/product.controllers");
 
-const io = new Server({
+const io = new Server(3000, {
   cors: { origin: [process.env.CORS_DOMAINS] },
 });
 
@@ -59,7 +59,5 @@ io.on("connection", (socket) => {
   // socket.on("getPendingOrders", async (data) => {
   // });
 });
-
-io.listen(3000);
 
 module.exports = io;

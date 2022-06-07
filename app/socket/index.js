@@ -1,6 +1,4 @@
-import { createServer } from "http";
-import { Server } from "socket.io";
-// const { Server } = require("socket.io");
+const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const {
   addProductToOrder,
@@ -8,8 +6,7 @@ const {
 } = require("../controllers/order.controllers");
 const { getAllProduct } = require("../controllers/product.controllers");
 
-const httpServer = createServer();
-const io = new Server(httpServer, {
+const io = new Server({
   cors: { origin: [process.env.CORS_DOMAINS] },
 });
 
@@ -63,6 +60,6 @@ io.on("connection", (socket) => {
   // });
 });
 
-httpServer.listen(8081);
+io.listen(3000);
 
 module.exports = io;

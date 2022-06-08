@@ -307,6 +307,7 @@ async function remove(req, res, next) {
       }
     } else {
       for (const id of req.body.ids) {
+        console.log(req.body);
         const order = await Order.findByPk(+id);
 
         if (order?.businessId !== business.id) continue;

@@ -306,17 +306,16 @@ async function remove(req, res, next) {
         await order.destroy();
       }
     } else {
-      //   for (const id of req.body.ids) {
-      //     const order = await Order.findByPk(+id);
-      //     if (order?.businessId !== business.id) continue;
-      //     await order.destroy();
-      //   }
+      for (const id of req.body.ids) {
+        const order = await Order.findByPk(+id);
+        if (order?.businessId !== business.id) continue;
+        await order.destroy();
+      }
     }
 
     return res.json({
       success: true,
       message: "The orders have been deleted successfully.",
-      data: req.body,
     });
   } catch (e) {
     next(e);

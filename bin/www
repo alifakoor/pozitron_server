@@ -5,9 +5,10 @@
  */
 
 const app = require("../app/app");
+const { Server } = require("socket.io");
 const debug = require("debug")("startwithsocketio:server");
 const http = require("http");
-const io = require('../app/socket');
+const io = require("../app/socket");
 
 /**
  * Get port from environment and store in Express.
@@ -21,7 +22,20 @@ app.set("port", port);
  */
 
 const server = http.createServer(app);
-io.attach(server);
+
+const io = new Server(server, {
+  cors: { origin: [process.env.CORS_DOMAINS] },
+});
+
+io.on("connection", (socket) => {
+  console.log("new user connected.");
+
+  socket.on("bahar", () => {
+    socket.emit("bahar2", "ok!");
+  });
+});
+
+// io.attach(server);
 
 /**
  * Listen on provided port, on all network interfaces.

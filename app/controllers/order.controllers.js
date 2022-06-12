@@ -344,12 +344,14 @@ async function getAllPendingOrders(req, res, next) {
                         {
                             model: Product,
                             left: true,
-                            attributes: ["id"],
                             include: [
                                 {
                                     model: ProductImage,
                                     as: "images",
                                     attributes: ["src"],
+                                },                                {
+                                    model: ProductMeta,
+                                    as: "meta"
                                 },
                             ],
                         },
@@ -372,10 +374,43 @@ async function getAllPendingOrders(req, res, next) {
             );
         }
 
+
+        const oredersData = [];
+        for(let order of orders){
+            order.items.map((item)=>{
+                item.images = item.product.images
+                item.meta = item.product.meta
+            })
+        }
+        console.log(">>>>11",orders[0].items[0].images[0]);
+        console.log(">>>>21",orders[0].customer);
+        console.log(">>>>31",orders[0]);
+
+        for (let index = 0; index < orders.length; index++) {
+            let orderObject = {
+                id : orders[index].id,
+                discountTotal : orders[index].discountTotal,
+                totalPrice : orders[index].totalPrice,
+                items: orders[index].items,
+                customerData:{
+                    ...orders[index].customer,
+                    ...orders[index].address
+                },
+                extraData:{
+                    shippingTotal: orders[index].shippingTotal,
+                    totalTax: orders[index].totalTax,
+                    discountTotal: orders[index].discountTotal,
+                }
+                
+            }
+            oredersData.push(orderObject);
+        }
+
+
         return res.status(200).json({
             success: true,
             message: "The list of pending orders found successfully.",
-            data: orders,
+            data: oredersData,
             domain: business.domain,
         });
     } catch (e) {

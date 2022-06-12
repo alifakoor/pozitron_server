@@ -1,13 +1,13 @@
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const {
-    addProductToOrder,
-    getPendingOrders,
+  addProductToOrder,
+  getPendingOrders,
 } = require("../controllers/order.controllers");
 const { getAllProduct } = require("../controllers/product.controllers");
 
-const io = new Server({
-    cors: { origin: [process.env.CORS_DOMAINS] },
+const io = new Server(3000, {
+  cors: { origin: [process.env.CORS_DOMAINS] },
 });
 
 // io.use((socket, next) => {
@@ -30,34 +30,34 @@ const io = new Server({
 // });
 
 io.on("connection", (socket) => {
-    console.log("new user connected.");
+  console.log("new user connected.");
 
-    socket.on("addProductToCart", async (data) => {
-        const result = await addProductToOrder(1, data.orderId, data.productId);
-        if (result) {
-            io.emit("resAddProduct", {
-                status: true,
-                message: "product added to the order.",
-            });
-        } else {
-            io.emit("resAddProduct", {
-                status: false,
-                message: "add product to the order failed.",
-            });
-        }
-    });
+  socket.on("addProductToCart", async (data) => {
+    const result = await addProductToOrder(1, data.orderId, data.productId);
+    if (result) {
+      io.emit("resAddProduct", {
+        status: true,
+        message: "product added to the order.",
+      });
+    } else {
+      io.emit("resAddProduct", {
+        status: false,
+        message: "add product to the order failed.",
+      });
+    }
+  });
 
-    const products =  getAllProduct(1);
-    io.emit("productList", { products });
+  const products = getAllProduct(1);
+  io.emit("productList", { products });
 
-    // socket.on("getProductList", async (data) => {
-    // });
+  // socket.on("getProductList", async (data) => {
+  // });
 
-    const orders =  getPendingOrders(1);
-    io.emit("pendingOrders", { orders });
+  const orders = getPendingOrders(1);
+  io.emit("pendingOrders", { orders });
 
-    // socket.on("getPendingOrders", async (data) => {
-    // });
+  // socket.on("getPendingOrders", async (data) => {
+  // });
 });
 
 module.exports = io;

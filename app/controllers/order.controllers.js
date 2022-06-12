@@ -415,6 +415,38 @@ async function getAllPendingOrders(req, res, next) {
         next(e);
     }
 }
+async function completeOrder(req, res, next) {
+  try {
+    const business = await Business.findOne({
+      where: { userId: req.user.id },
+    });
+    if (!business) {
+      throw new BaseErr(
+        "BusinessDoesNotExist",
+        httpStatusCodes.NOT_FOUND,
+        true,
+        `The user business not found.`
+      );
+    }
+
+    const order = await Order.findByPk(+req.body.orderId);
+    if (order?.businessId !== business.id) {
+      throw new BaseErr(
+        "OrderDoesNotExist",
+        httpStatusCodes.NOT_FOUND,
+        true,
+        `The order not found.`
+      );
+    }
+
+    order = { ...order, ...req.body };
+    order.save();
+
+  } catch(e) {
+    next(e);
+  }
+}
+
 // handlers for socket
 async function addProductToOrder(userId, orderId, productId) {
     try {
@@ -694,16 +726,15 @@ async function deletedWithWebhook(req, res, next) {
 
 // export controller
 module.exports = {
-    getAll,
-    create,
-    edit,
-    remove,
-    getAllPendingOrders,
-    addProductToOrder,
-    getPendingOrders,
-    createdWithWebhook,
-    updatedWithWebhook,
-    deletedWithWebhook
-}
-
-
+  getAll,
+  create,
+  edit,
+  remove,
+  getAllPendingOrders,
+  addProductToOrder,
+  getPendingOrders,
+  createdWithWebhook,
+  updatedWithWebhook,
+  deletedWithWebhook,
+  completeOrder
+};

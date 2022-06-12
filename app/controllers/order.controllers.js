@@ -359,9 +359,12 @@ async function getAllPendingOrders(req, res, next) {
                 },
                 {
                     model: Customer,
+                    as: "customer"
                 },
                 {
                     model: Address,
+                    as: "address"
+
                 },
             ],
         });

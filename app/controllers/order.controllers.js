@@ -505,7 +505,7 @@ async function getPendingOrders(userId) {
         }
 
         const orders = await Order.findAll({
-            where: { businessId: business.id, status: "pending" },
+            where: { businessId: business.id, status: "pending" , src:"offline"},
             include: [
                 {
                     model: OrderHasProducts,

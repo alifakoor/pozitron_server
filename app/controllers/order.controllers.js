@@ -376,15 +376,6 @@ async function getAllPendingOrders(req, res, next) {
 
 
         const oredersData = [];
-        for(let order of orders){
-            order.items.map((item)=>{
-                item.images = item.product.images
-                item.meta = item.product.meta
-            })
-        }
-        console.log(">>>>11",orders[0].items[0].images[0]);
-        console.log(">>>>21",orders[0].customer);
-        console.log(">>>>31",orders[0]);
 
         for (let index = 0; index < orders.length; index++) {
             let orderObject = {

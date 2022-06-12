@@ -387,8 +387,8 @@ async function getAllPendingOrders(req, res, next) {
                 totalPrice : orders[index].totalPrice,
                 items: orders[index].items,
                 customerData:{
-                    ...orders[index].customer,
-                    ...orders[index].address
+                    ...orders[index].customer.dataValues,
+                    ...orders[index].address.dataValues
                 },
                 extraData:{
                     shippingTotal: orders[index].shippingTotal,

@@ -322,58 +322,97 @@ async function remove(req, res, next) {
   }
 }
 async function getAllPendingOrders(req, res, next) {
-  try {
-    const business = await Business.findOne({
-      where: { userId: req.user.id },
-    });
-    if (!business) {
-      throw new BaseErr(
-        "BusinessDoesNotExist",
-        httpStatusCodes.NOT_FOUND,
-        true,
-        `The user business not found.`
-      );
-    }
+    try {
+        const business = await Business.findOne({
+            where: { userId: req.user.id },
+        });
+        if (!business) {
+            throw new BaseErr(
+                "BusinessDoesNotExist",
+                httpStatusCodes.NOT_FOUND,
+                true,
+                `The user business not found.`
+            );
+        }
 
-    const orders = await business.getOrders({
-      where: {
-        businessId: business.id,
-        status: "pending",
-      },
-      include: [
-        {
-          model: OrderHasProducts,
-          as: "items",
-          include: [
-            {
-              model: Product,
-              left: true,
-              attributes: ["id"],
-              include: [
-                {
-                  model: ProductImage,
-                  as: "images",
-                  attributes: ["src"],
-                },
-              ],
+        const orders = await business.getOrders({
+            where: {
+                businessId: business.id,
+                status: "pending",
             },
-          ],
-        },
-        {
-          model: Customer,
-        },
-        {
-          model: Address,
-        },
-      ],
-    });
-    if (!orders.length) {
-      throw new BaseErr(
-        "BusinessDoesNotHaveOrders",
-        httpStatusCodes.NOT_FOUND,
-        true,
-        `There is not any orders.`
-      );
+            include: [
+                {
+                    model: OrderHasProducts,
+                    as: "items",
+                    include: [
+                        {
+                            model: Product,
+                            left: true,
+                            include: [
+                                {
+                                    model: ProductImage,
+                                    as: "images",
+                                    attributes: ["src"],
+                                },                                {
+                                    model: ProductMeta,
+                                    as: "meta"
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    model: Customer,
+                    as: "customer"
+                },
+                {
+                    model: Address,
+                    as: "address"
+
+                },
+            ],
+        });
+        if (!orders.length) {
+            throw new BaseErr(
+                "BusinessDoesNotHaveOrders",
+                httpStatusCodes.NOT_FOUND,
+                true,
+                `There is not any orders.`
+            );
+        }
+
+
+        const oredersData = [];
+
+        for (let index = 0; index < orders.length; index++) {
+            let orderObject = {
+                id : orders[index].id,
+                discountTotal : orders[index].discountTotal,
+                totalPrice : orders[index].totalPrice,
+                items: orders[index].items,
+                customerData:{
+                    ...orders[index].customer.dataValues,
+                    ...orders[index].address.dataValues
+                },
+                extraData:{
+                    shippingTotal: orders[index].shippingTotal,
+                    totalTax: orders[index].totalTax,
+                    discountTotal: orders[index].discountTotal,
+                }
+                
+            }
+            oredersData.push(orderObject);
+        }
+
+
+        return res.status(200).json({
+            success: true,
+            message: "The list of pending orders found successfully.",
+            data: oredersData,
+            domain: business.domain,
+        });
+    } catch (e) {
+        next(e);
     }
 
     return res.status(200).json({
@@ -389,25 +428,86 @@ async function getAllPendingOrders(req, res, next) {
 
 // handlers for socket
 async function addProductToOrder(userId, orderId, productId) {
-  try {
-    const business = await Business.findOne({ where: { userId } });
-    if (!business) {
-      throw new BaseErr(
-        "BusinessNotFound",
-        httpStatusCodes.NOT_FOUND,
-        true,
-        `The business does not exists.`
-      );
-    }
+    try {
+        const business = await Business.findOne({ where: { userId } });
+        if (!business) {
+            throw new BaseErr(
+                "BusinessNotFound",
+                httpStatusCodes.NOT_FOUND,
+                true,
+                `The business does not exists.`
+            );
+        }
 
-    const order = await Order.findByPk(orderId);
-    if (!order) {
-      throw new BaseErr(
-        "OrderNotFound",
-        httpStatusCodes.NOT_FOUND,
-        true,
-        `The order does not exists.`
-      );
+        const order = await Order.findByPk(orderId);
+        if (!order) {
+            throw new BaseErr(
+                "OrderNotFound",
+                httpStatusCodes.NOT_FOUND,
+                true,
+                `The order does not exists.`
+            );
+        }
+
+        const product = await Product.findByPk(productId);
+        if (!product) {
+            throw new BaseErr(
+                "ProductNotFound",
+                httpStatusCodes.NOT_FOUND,
+                true,
+                `The product does not exists.`
+            );
+        }
+
+        if (business.id !== order.businessId) {
+            throw new BaseErr(
+                "OrderDidNotBelongToBusiness",
+                httpStatusCodes.BAD_REQUEST,
+                true,
+                `The order didn't belong to business.`
+            );
+        }
+
+        if (business.id !== product.businessId) {
+            throw new BaseErr(
+                "ProductDidNotBelongToBusiness",
+                httpStatusCodes.BAD_REQUEST,
+                true,
+                `The product didn't belong to business.`
+            );
+        }
+
+        const checkOrderHasProduct = await OrderHasProducts.findOne({
+            where: { orderId, productId },
+        });
+        if (checkOrderHasProduct) {
+            checkOrderHasProduct.quantity++;
+            await checkOrderHasProduct.save();
+        } else {
+            await OrderHasProducts.create({
+                name: product.name,
+                price: product.price,
+                type: product.type,
+                discount: product.discount,
+                salePrice: product.salePrice,
+                onlinePrice: product.onlinePrice,
+                onlineDiscount: product.onlineDiscount,
+                onlineSalePrice: product.onlineSalePrice,
+                quantity: 1,
+                total: product.price,
+                totalTax: 0,
+                productId,
+                orderId,
+            });
+        }
+        product.stock--;
+        await product.save();
+
+        return true;
+    } catch (e) {
+        console.log("controller: addProductToOrder");
+        console.log(e);
+        return false;
     }
 
     const product = await Product.findByPk(productId);
@@ -471,29 +571,20 @@ async function addProductToOrder(userId, orderId, productId) {
   }
 }
 async function getPendingOrders(userId) {
-  try {
-    const business = await Business.findOne({ where: { userId } });
-    if (!business) {
-      throw new BaseErr(
-        "BusinessNotFound",
-        httpStatusCodes.NOT_FOUND,
-        true,
-        `The business does not exists.`
-      );
-    }
+    try {
+        const business = await Business.findOne({ where: { userId } });
+        if (!business) {
+            throw new BaseErr(
+                "BusinessNotFound",
+                httpStatusCodes.NOT_FOUND,
+                true,
+                `The business does not exists.`
+            );
+        }
 
-    const orders = await Order.findAll({
-      where: { businessId: business.id, status: "pending" },
-      include: [
-        {
-          model: OrderHasProducts,
-          as: "items",
-          include: [
-            {
-              model: Product,
-              left: true,
-              attributes: ["id"],
-              include: [
+        const orders = await Order.findAll({
+            where: { businessId: business.id, status: "pending" , src:"offline"},
+            include: [
                 {
                   model: ProductImage,
                   as: "images",

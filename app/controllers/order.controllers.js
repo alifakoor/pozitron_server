@@ -470,6 +470,7 @@ async function addProductToOrder(userId, orderId, productId) {
             await OrderHasProducts.create({
                 name: product.name,
                 price: product.price,
+                type: product.type,
                 discount: product.discount,
                 salePrice: product.salePrice,
                 onlinePrice: product.onlinePrice,

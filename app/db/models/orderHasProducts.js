@@ -14,6 +14,10 @@ const OrderHasProducts = sequelize.define('orderHasProduct', {
 		type: DataTypes.BIGINT,
 		defaultValue: 0,
 	},
+	type:{
+		type: DataTypes.STRING,
+		allowNull: false
+	},
 	discount: {
 		type: DataTypes.INTEGER,
 		defaultValue: 0,

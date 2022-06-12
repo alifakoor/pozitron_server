@@ -6,6 +6,10 @@ const {
 } = require("../controllers/order.controllers");
 const { getAllProduct } = require("../controllers/product.controllers");
 
+const io = new Server(3000, {
+  cors: { origin: [process.env.CORS_DOMAINS] },
+});
+
 // io.use((socket, next) => {
 //     if (socket.handshake.auth?.token) {
 //         jwt.verify(

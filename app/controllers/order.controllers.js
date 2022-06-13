@@ -384,18 +384,12 @@ async function getAllPendingOrders(req, res, next) {
 
 
         const oredersData = [];
-        console.log(">>>>>>>>1", orders[0].items);
-        console.log(">>>28", orders[0].items[0].product);
         for (let index = 0; index < orders.length; index++) {
             orders[index].items.map(
                 item => Object.assign(item, { images: item.product.images, meta: item.product.meta })
             )
             orders[index].items.map(
                 item => delete item.product)
-
-            console.log(">>>38", orders[0].items[0].product);
-            console.log(">>>48", orders[0].items[0].images);
-            console.log(">>>58", orders[0].items[0].meta);
 
             let customerDataValue = {};
             if (orders[index].customer !== null) {
@@ -426,20 +420,6 @@ async function getAllPendingOrders(req, res, next) {
             }
             oredersData.push(orderObject);
         }
-
-        // for (let i = 0; i < oredersData.length; i++) {
-        //     oredersData[i].items.map(
-        //         item => { return Object.assign(item, { images: item.product.images, meta: item.product.meta }) }
-        //     )
-        //     oredersData[i].items.map(
-        //         item => { (delete item.product) })
-        // }
-
-        // console.log(">>>>>1", oredersData[0].items[0]);
-        // console.log(">>>>>2", oredersData[0].items[0].images);
-        // console.log(">>>>>3", oredersData[0].items[0].images);
-
-        console.log(">>>:)", orders[0]);
 
         return res.status(200).json({
             success: true,

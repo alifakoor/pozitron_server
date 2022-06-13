@@ -385,11 +385,12 @@ async function getAllPendingOrders(req, res, next) {
 
         const oredersData = [];
         for (let index = 0; index < orders.length; index++) {
-            orders[index].items.map(
-                item => Object.assign(item, { images: item.product.images, meta: item.product.meta })
-            )
-            orders[index].items.map(
-                item => delete item.product)
+            // orders[index].items.map(
+            //     item => Object.assign(item, { images: item.product.images, meta: item.product.meta })
+            // )
+            // orders[index].items.map(
+            //     item => delete item.product
+            // )
 
             let customerDataValue = {};
             if (orders[index].customer !== null) {
@@ -407,7 +408,7 @@ async function getAllPendingOrders(req, res, next) {
                 totalPrice: orders[index].totalPrice,
                 items: orders[index].items,
                 customerData: {
-                    deliveryDate :orders[index].deliveryDate,
+                    deliveryDate: orders[index].deliveryDate,
                     ...customerDataValue,
                     ...addressDataValue
                 },

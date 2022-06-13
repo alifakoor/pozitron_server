@@ -413,6 +413,7 @@ async function getAllPendingOrders(req, res, next) {
                 totalPrice: orders[index].totalPrice,
                 items: orders[index].items,
                 customerData: {
+                    deliveryDate :orders[index].deliveryDate,
                     ...customerDataValue,
                     ...addressDataValue
                 },
@@ -438,7 +439,7 @@ async function getAllPendingOrders(req, res, next) {
         // console.log(">>>>>2", oredersData[0].items[0].images);
         // console.log(">>>>>3", oredersData[0].items[0].images);
 
-        console.log(">>>68", oredersData[0].items[0]);
+        console.log(">>>:)", orders[0]);
 
         return res.status(200).json({
             success: true,

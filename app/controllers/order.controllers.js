@@ -383,16 +383,28 @@ async function getAllPendingOrders(req, res, next) {
 
 
         const oredersData = [];
-
+        console.log(">>>>>1",orders[0].customer);
+        console.log(">>>>>2",orders[0].customer);
         for (let index = 0; index < orders.length; index++) {
+            
+            let customerDataValue = {};
+            if(orders[index].customer !== null){ 
+                customerDataValue = orders[index].customer.dataValues;
+            }
+
+            let addressDataValue = {};
+            if(orders[index].address !== null){ 
+               addressDataValue = orders[index].address.dataValues;
+            }
+
             let orderObject = {
                 id: orders[index].id,
                 discountTotal: orders[index].discountTotal,
                 totalPrice: orders[index].totalPrice,
                 items: orders[index].items,
                 customerData: {
-                    ...orders[index].customer.dataValues,
-                    ...orders[index].address.dataValues
+                    ...customerDataValue,
+                    ...addressDataValue
                 },
                 extraData: {
                     shippingTotal: orders[index].shippingTotal,
@@ -403,7 +415,6 @@ async function getAllPendingOrders(req, res, next) {
             }
             oredersData.push(orderObject);
         }
-
 
         return res.status(200).json({
             success: true,

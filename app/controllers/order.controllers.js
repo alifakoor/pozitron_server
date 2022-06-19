@@ -448,7 +448,7 @@ async function completeOrder(req, res, next) {
         }
 
 
-        let order = await Order.findOne({
+        const order = await Order.findOne({
             where: { id: req.body.id },
         });
         if (!order || order.businessId !== business.id) {
@@ -461,22 +461,36 @@ async function completeOrder(req, res, next) {
         }
 
         order.status = "completed";
-        await order.save();
+        order.deliveryDate = req.body.deliveryDate;
+        order.description = req.body.description;
+        order.deliveryTime = req.body.deliveryTime;
+        order.additionsPrice = req.body.additionsPrice;
 
-        const customer = await Customer.create({
-            username: req.body.customerData.username,
-            firstname: req.body.customerData.firstname,
-            lastname: req.body.customerData.lastname,
-            email: req.body.customerData.email,
-            phone: req.body.customerData.phone
+
+        const customer = await Customer.findOne({
+            where: { phone: req.body.customerData.phone },
         });
 
+        if (!customer) {
+            const customer = await Customer.create({
+                username: req.body.customerData.username,
+                firstname: req.body.customerData.firstname,
+                lastname: req.body.customerData.lastname,
+                email: req.body.customerData.email,
+                phone: req.body.customerData.phone,
+                businessId: business.id
+            });
+        }
+
+
+        order.customerId = customer.id;
+        await order.save();
         const address = await Address.create({
             country: req.body.addressData.country,
             city: req.body.addressData.city,
             postCode: req.body.addressData.postCode,
             phone: req.body.addressData.phone,
-            address: req.body.addressData.address
+            address: req.body.addressData.address,
         });
 
         let ordersData = { order, customer, address };

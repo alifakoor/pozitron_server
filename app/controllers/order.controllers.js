@@ -464,8 +464,10 @@ async function completeOrder(req, res, next) {
         await order.save();
 
         const customer = await Customer.create({
+            username: req.body.customerData.username,
             firstname: req.body.customerData.firstname,
             lastname: req.body.customerData.lastname,
+            email: req.body.customerData.email,
             phone: req.body.customerData.phone
         });
 

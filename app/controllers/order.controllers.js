@@ -481,16 +481,16 @@ async function completeOrder(req, res, next) {
                 businessId: business.id
             });
         }
-
-
         order.customerId = customer.id;
         await order.save();
+
         const address = await Address.create({
             country: req.body.addressData.country,
             city: req.body.addressData.city,
             postCode: req.body.addressData.postCode,
             phone: req.body.addressData.phone,
             address: req.body.addressData.address,
+            customerId: customer.id
         });
 
         let ordersData = { order, customer, address };

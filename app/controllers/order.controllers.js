@@ -384,18 +384,13 @@ async function getAllPendingOrders(req, res, next) {
 
 
         const oredersData = [];
-        console.log(">>>>>>>>1", orders[0].items);
-        console.log(">>>28", orders[0].items[0].product);
         for (let index = 0; index < orders.length; index++) {
-            orders[index].items.map(
-                item => Object.assign(item, { images: item.product.images, meta: item.product.meta })
-            )
-            orders[index].items.map(
-                item => delete item.product)
-
-            console.log(">>>38", orders[0].items[0].product);
-            console.log(">>>48", orders[0].items[0].images);
-            console.log(">>>58", orders[0].items[0].meta);
+            // orders[index].items.map(
+            //     item => Object.assign(item, { images: item.product.images, meta: item.product.meta })
+            // )
+            // orders[index].items.map(
+            //     item => delete item.product
+            // )
 
             let customerDataValue = {};
             if (orders[index].customer !== null) {
@@ -413,6 +408,7 @@ async function getAllPendingOrders(req, res, next) {
                 totalPrice: orders[index].totalPrice,
                 items: orders[index].items,
                 customerData: {
+                    deliveryDate: orders[index].deliveryDate,
                     ...customerDataValue,
                     ...addressDataValue
                 },
@@ -426,20 +422,6 @@ async function getAllPendingOrders(req, res, next) {
             oredersData.push(orderObject);
         }
 
-        // for (let i = 0; i < oredersData.length; i++) {
-        //     oredersData[i].items.map(
-        //         item => { return Object.assign(item, { images: item.product.images, meta: item.product.meta }) }
-        //     )
-        //     oredersData[i].items.map(
-        //         item => { (delete item.product) })
-        // }
-
-        // console.log(">>>>>1", oredersData[0].items[0]);
-        // console.log(">>>>>2", oredersData[0].items[0].images);
-        // console.log(">>>>>3", oredersData[0].items[0].images);
-
-        console.log(">>>68", oredersData[0].items[0]);
-
         return res.status(200).json({
             success: true,
             message: "The list of pending orders found successfully.",
@@ -452,6 +434,7 @@ async function getAllPendingOrders(req, res, next) {
 }
 async function completeOrder(req, res, next) {
     try {
+
         const business = await Business.findOne({
             where: { userId: req.user.id },
         });
@@ -464,8 +447,11 @@ async function completeOrder(req, res, next) {
             );
         }
 
-        const order = await Order.findByPk(+req.body.orderId);
-        if (order?.businessId !== business.id) {
+
+        const order = await Order.findOne({
+            where: { id: req.body.id },
+        });
+        if (!order || order.businessId !== business.id) {
             throw new BaseErr(
                 "OrderDoesNotExist",
                 httpStatusCodes.NOT_FOUND,
@@ -474,9 +460,70 @@ async function completeOrder(req, res, next) {
             );
         }
 
-        order = { ...order, ...req.body };
-        order.save();
+        order.status = "completed";
+        order.deliveryDate = req.body.deliveryDate;
+        order.description = req.body.description;
+        order.deliveryTime = req.body.deliveryTime;
+        order.additionsPrice = req.body.additionsPrice;
 
+
+        const customer = await Customer.findOne({
+            where: { phone: req.body.customerData.phone },
+        });
+
+        if (!customer) {
+            const customer = await Customer.create({
+                username: req.body.customerData.username,
+                firstname: req.body.customerData.firstname,
+                lastname: req.body.customerData.lastname,
+                email: req.body.customerData.email,
+                phone: req.body.customerData.phone,
+                businessId: business.id
+            });
+        }
+        order.customerId = customer.id;
+        await order.save();
+
+        const address = await Address.create({
+            country: req.body.addressData.country,
+            city: req.body.addressData.city,
+            postCode: req.body.addressData.postCode,
+            phone: req.body.addressData.phone,
+            address: req.body.addressData.address,
+            customerId: customer.id
+        });
+
+        let ordersData = { order, customer, address };
+
+        return res.status(200).json({
+            success: true,
+            message: "The completed this order.",
+            data: ordersData,
+        });
+        // const business = await Business.findOne({
+        //     where: { userId: req.user.id },
+        // });
+        // if (!business) {
+        //     throw new BaseErr(
+        //         "BusinessDoesNotExist",
+        //         httpStatusCodes.NOT_FOUND,
+        //         true,
+        //         `The user business not found.`
+        //     );
+        // }
+
+        // const order = await Order.findByPk(+req.body.orderId);
+        // if (order?.businessId !== business.id) {
+        //     throw new BaseErr(
+        //         "OrderDoesNotExist",
+        //         httpStatusCodes.NOT_FOUND,
+        //         true,
+        //         `The order not found.`
+        //     );
+        // }
+
+        // order = { ...order, ...req.body };
+        // order.save();
     } catch (e) {
         next(e);
     }

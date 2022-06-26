@@ -432,6 +432,104 @@ async function getAllPendingOrders(req, res, next) {
         next(e);
     }
 }
+
+async function addProduct(req, res, next) {
+    try {
+
+        const business = await Business.findOne({ where: { userId: req.user.id } });
+        if (!business) {
+            throw new BaseErr(
+                "BusinessNotFound",
+                httpStatusCodes.NOT_FOUND,
+                true,
+                `The business does not exists.`
+            );
+        }
+
+        
+
+        const order = await Order.findOne({
+            where: { id: req.body.orderId },
+        });
+        if (!order) {
+            throw new BaseErr(
+                "OrderNotFound",
+                httpStatusCodes.NOT_FOUND,
+                true,
+                `The order does not exists.`
+            );
+        }
+
+        const product = await Product.findOne({
+            where: { id: req.body.productId },
+        });
+        if (!product) {
+            throw new BaseErr(
+                "ProductNotFound",
+                httpStatusCodes.NOT_FOUND,
+                true,
+                `The product does not exists.`
+            );
+        }
+
+        if (business.id !== order.businessId) {
+            throw new BaseErr(
+                "OrderDidNotBelongToBusiness",
+                httpStatusCodes.BAD_REQUEST,
+                true,
+                `The order didn't belong to business.`
+            );
+        }
+
+        if (business.id !== product.businessId) {
+            throw new BaseErr(
+                "ProductDidNotBelongToBusiness",
+                httpStatusCodes.BAD_REQUEST,
+                true,
+                `The product didn't belong to business.`
+            );
+        }
+
+        const checkOrderHasProduct = await OrderHasProducts.findOne({
+            where: { orderId: req.body.orderId, productId: req.body.productId },
+        });
+        if (checkOrderHasProduct) {
+            checkOrderHasProduct.quantity += req.body.quantity;
+            await checkOrderHasProduct.save();
+        } else {
+            await OrderHasProducts.create({
+                name: product.name,
+                price: product.price,
+                type: product.type,
+                discount: product.discount,
+                salePrice: product.salePrice,
+                onlinePrice: product.onlinePrice,
+                onlineDiscount: product.onlineDiscount,
+                onlineSalePrice: product.onlineSalePrice,
+                quantity: req.body.quantity,
+                total: product.price,
+                totalTax: 0,
+                productId: product.id,
+                orderId: order.id,
+            });
+        }
+        product.stock -= req.body.quantity;
+        product.reservationStock += req.body.quantity;
+        order.totalPrice += product.price * req.body.quantity;
+        await order.save();
+        await product.save();
+
+        // console.log(order.items);
+
+        return res.status(200).json({
+            success: true,
+            message: "product added successfully.",
+        })
+    } catch (e) {
+        next(e)
+    }
+}
+
 async function completeOrder(req, res, next) {
     try {
 
@@ -818,5 +916,6 @@ module.exports = {
     createdWithWebhook,
     updatedWithWebhook,
     deletedWithWebhook,
-    completeOrder
+    completeOrder,
+    addProduct
 };

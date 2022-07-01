@@ -148,6 +148,8 @@ async function getAll(req, res, next) {
         next(e);
     }
 }
+
+// >>>>>>>>>>>1
 async function create(req, res, next) {
     try {
         const business = await Business.findOne({
@@ -192,8 +194,7 @@ async function create(req, res, next) {
         const order = await Order.create({
             src: "offline",
             orderKey: `order_key_${business.domain}`,
-            totalPirce: product.price,
-            businessId: business.id,
+            businessId: business.id
         });
         if (!order) {
             throw new BaseErr(
@@ -224,6 +225,10 @@ async function create(req, res, next) {
                 `The relation between order and product not been created successfully.`
             );
         }
+
+
+        order.totalPrice = product.price;
+        await order.save();
 
         return res.status(200).json({
             success: true,
@@ -565,20 +570,16 @@ async function completeOrder(req, res, next) {
         order.additionsPrice = req.body.additionsPrice;
 
 
-        const customer = await Customer.findOne({
-            where: { phone: req.body.customerData.phone },
+
+        const customer = await Customer.create({
+            username: req.body.customerData.username,
+            firstname: req.body.customerData.firstname,
+            lastname: req.body.customerData.lastname,
+            email: req.body.customerData.email,
+            phone: req.body.customerData.phone,
+            businessId: business.id
         });
 
-        if (!customer) {
-            const customer = await Customer.create({
-                username: req.body.customerData.username,
-                firstname: req.body.customerData.firstname,
-                lastname: req.body.customerData.lastname,
-                email: req.body.customerData.email,
-                phone: req.body.customerData.phone,
-                businessId: business.id
-            });
-        }
         order.customerId = customer.id;
         await order.save();
 

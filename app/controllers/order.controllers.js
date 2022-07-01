@@ -265,17 +265,19 @@ async function edit(req, res, next) {
                 business.key,
                 business.secret
             );
-
-            for (const id of req.body.ids) {
-                const order = await Order.findByPk(+id);
-                if (order?.businessId !== business.id) continue;
-
-                await wc.updateOrder({ id: order.ref, status });
-
-                order.status = status;
-                await order.save();
-            }
         }
+
+        for (const id of req.body.ids) {
+            const order = await Order.findByPk(+id);
+            if (order?.businessId !== business.id) continue;
+
+            if (!!business.onlineBusiness) {
+                await wc.updateOrder({ id: order.ref, status });
+            }
+            order.status = status;
+            await order.save();
+        }
+
 
         return res.json({
             success: true,

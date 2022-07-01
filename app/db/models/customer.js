@@ -9,14 +9,7 @@ const Customer = sequelize.define('customer', {
 	firstname: DataTypes.STRING,
 	lastname: DataTypes.STRING,
 	email: DataTypes.STRING,
-	phone: {
-		type: DataTypes.BIGINT(11).UNSIGNED,
-		allowNull: false,
-		unique: true,
-		validate: {
-			is: /^(0)?9\d{9}$/i
-		}
-	}
+	phone: DataTypes.STRING
 }, {
 	tableName: 'customers',
 	timestamps: true,

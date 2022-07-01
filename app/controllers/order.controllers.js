@@ -182,6 +182,10 @@ async function create(req, res, next) {
             );
         }
 
+        product.stock -= 1;
+        product.reservationStock += 1;
+        await product.save();
+
         let customer = null;
         if (req.body.customer?.id) {
             customer = await Customer.findByPk(req.body.customer.id);
@@ -437,7 +441,7 @@ async function getAllPendingOrders(req, res, next) {
         next(e);
     }
 }
-
+// >>>>>>2
 async function addProduct(req, res, next) {
     try {
 
@@ -451,7 +455,7 @@ async function addProduct(req, res, next) {
             );
         }
 
-        
+
 
         const order = await Order.findOne({
             where: { id: req.body.orderId },
@@ -495,6 +499,24 @@ async function addProduct(req, res, next) {
             );
         }
 
+        if (req.body.quantity > product.stock && req.body.quantity > 0) {
+            throw new BaseErr(
+                "ProductDoesNotHaveEnoughStock",
+                httpStatusCodes.NOT_ACCEPTABLE,
+                true,
+                `The product does not have enough stock.`
+            );
+        }
+
+        if (req.body.quantity < 0 && -1 * (req.body.quantity) > product.reservationStock) {
+            throw new BaseErr(
+                "TheQuantityIsGreaterThanReservationStock",
+                httpStatusCodes.NOT_ACCEPTABLE,
+                true,
+                `The quantity is greater than the reservation stock.`
+            );
+        }
+
         const checkOrderHasProduct = await OrderHasProducts.findOne({
             where: { orderId: req.body.orderId, productId: req.body.productId },
         });
@@ -518,6 +540,7 @@ async function addProduct(req, res, next) {
                 orderId: order.id,
             });
         }
+
         product.stock -= req.body.quantity;
         product.reservationStock += req.body.quantity;
         order.totalPrice += product.price * req.body.quantity;

@@ -552,6 +552,9 @@ async function addProduct(req, res, next) {
         return res.status(200).json({
             success: true,
             message: "product added successfully.",
+            data: {
+                order
+            }
         })
     } catch (e) {
         next(e)

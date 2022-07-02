@@ -154,6 +154,7 @@ async function getAll(req, res, next) {
             let orderObject = {
                 id: orders[index].id,
                 discountTotal: orders[index].discountTotal,
+                src: orders[index].src,
                 discountPrice: orders[index].discountPrice,
                 totalPrice: orders[index].totalPrice,
                 items: orders[index].items,

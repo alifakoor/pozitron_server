@@ -184,10 +184,10 @@ async function create(req, res, next) {
         for (const item of items) {
             if (item.barcode === req.body.barcode) {
                 throw new BaseErr(
-                    "ThisBarcodeExista",
+                    "ThisBarcodeExists",
                     httpStatusCodes.BAD_REQUEST,
                     true,
-                    `The product with barcode ${req.body.barcode} already exists.`
+                    `The product with barcode {${req.body.barcode}} already exists.`
                 );
             }
         }

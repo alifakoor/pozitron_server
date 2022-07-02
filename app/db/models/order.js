@@ -31,6 +31,14 @@ const Order = sequelize.define('order', {
 			min: 0
 		}
 	},
+	discountPrice: {
+		type: DataTypes.BIGINT,
+		defaultValue: 0,
+		validate: {
+			min: 0
+		}
+	},
+
 	totalPrice: {
 		type: DataTypes.BIGINT,
 		defaultValue: 0,

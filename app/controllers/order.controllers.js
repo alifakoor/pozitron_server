@@ -156,6 +156,8 @@ async function getAll(req, res, next) {
                 discountTotal: orders[index].discountTotal,
                 totalPrice: orders[index].totalPrice,
                 items: orders[index].items,
+                staus:orders[index].status,
+                createAt: orders[index].createdAt,
                 customerData: {
                     deliveryDate: orders[index].deliveryDate,
                     ...customerDataValue,
@@ -628,7 +630,7 @@ async function completeOrder(req, res, next) {
         order.status = "completed";
         order.deliveryDate = req.body.deliveryDate;
         order.description = req.body.description;
-        order.discount = req.body.discount;
+        order.discountTotal = req.body.discount;
         order.shippingTotal = req.body.shippingTotal;
         order.deliveryTime = req.body.deliveryTime;
         order.additionsPrice = req.body.additionsPrice;

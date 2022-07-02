@@ -90,8 +90,6 @@ async function getAll(req, res, next) {
             );
         }
 
-        // console.log(Object.keys(Business.prototype));
-
         const orders = await business.getOrders({
             where: {
                 businessId: business.id,
@@ -103,22 +101,16 @@ async function getAll(req, res, next) {
                     include: [
                         {
                             model: Product,
-                            left: true,
                             attributes: ["id"],
+                            left: true,
                             include: [
                                 {
                                     model: ProductImage,
                                     as: "images",
                                     attributes: ["src"],
-                                },
-                                {
+                                }, {
                                     model: ProductMeta,
-                                    as: "meta",
-                                },
-                                {
-                                    model: ProductImage,
-                                    as: "images",
-                                    required: false,
+                                    as: "meta"
                                 },
                             ],
                         },
@@ -126,6 +118,12 @@ async function getAll(req, res, next) {
                 },
                 {
                     model: Customer,
+                    as: "customer"
+                },
+                {
+                    model: Address,
+                    as: "address"
+
                 },
             ],
         });
@@ -138,16 +136,52 @@ async function getAll(req, res, next) {
             );
         }
 
+
+        const oredersData = [];
+        for (let index = 0; index < orders.length; index++) {
+
+
+            let customerDataValue = {};
+            if (orders[index].customer !== null) {
+                customerDataValue = orders[index].customer.dataValues;
+            }
+
+            let addressDataValue = {};
+            if (orders[index].address !== null) {
+                addressDataValue = orders[index].address.dataValues;
+            }
+
+            let orderObject = {
+                id: orders[index].id,
+                discountTotal: orders[index].discountTotal,
+                totalPrice: orders[index].totalPrice,
+                items: orders[index].items,
+                customerData: {
+                    deliveryDate: orders[index].deliveryDate,
+                    ...customerDataValue,
+                    ...addressDataValue
+                },
+                extraData: {
+                    shippingTotal: orders[index].shippingTotal,
+                    totalTax: orders[index].totalTax,
+                    discountTotal: orders[index].discountTotal,
+                }
+
+            }
+            oredersData.push(orderObject);
+        }
+
         return res.status(200).json({
             success: true,
-            message: "The list of orders found successfully.",
-            data: orders,
-            domain: business.domain,
+            message: "The list of pending orders found successfully.",
+            data: oredersData,
         });
     } catch (e) {
         next(e);
     }
 }
+
+
 async function create(req, res, next) {
     try {
         const business = await Business.findOne({
@@ -180,6 +214,10 @@ async function create(req, res, next) {
             );
         }
 
+        product.stock -= 1;
+        product.reservationStock += 1;
+        await product.save();
+
         let customer = null;
         if (req.body.customer?.id) {
             customer = await Customer.findByPk(req.body.customer.id);
@@ -192,8 +230,7 @@ async function create(req, res, next) {
         const order = await Order.create({
             src: "offline",
             orderKey: `order_key_${business.domain}`,
-            totalPirce: product.price,
-            businessId: business.id,
+            businessId: business.id
         });
         if (!order) {
             throw new BaseErr(
@@ -224,6 +261,10 @@ async function create(req, res, next) {
                 `The relation between order and product not been created successfully.`
             );
         }
+
+
+        order.totalPrice = product.price;
+        await order.save();
 
         return res.status(200).json({
             success: true,
@@ -256,17 +297,19 @@ async function edit(req, res, next) {
                 business.key,
                 business.secret
             );
-
-            for (const id of req.body.ids) {
-                const order = await Order.findByPk(+id);
-                if (order?.businessId !== business.id) continue;
-
-                await wc.updateOrder({ id: order.ref, status });
-
-                order.status = status;
-                await order.save();
-            }
         }
+
+        for (const id of req.body.ids) {
+            const order = await Order.findByPk(+id);
+            if (order?.businessId !== business.id) continue;
+
+            if (!!business.onlineBusiness) {
+                await wc.updateOrder({ id: order.ref, status });
+            }
+            order.status = status;
+            await order.save();
+        }
+
 
         return res.json({
             success: true,
@@ -446,7 +489,7 @@ async function addProduct(req, res, next) {
             );
         }
 
-        
+
 
         const order = await Order.findOne({
             where: { id: req.body.orderId },
@@ -490,6 +533,24 @@ async function addProduct(req, res, next) {
             );
         }
 
+        if (req.body.quantity > product.stock && req.body.quantity > 0) {
+            throw new BaseErr(
+                "ProductDoesNotHaveEnoughStock",
+                httpStatusCodes.NOT_ACCEPTABLE,
+                true,
+                `The product does not have enough stock.`
+            );
+        }
+
+        if (req.body.quantity < 0 && -1 * (req.body.quantity) > product.reservationStock) {
+            throw new BaseErr(
+                "TheQuantityIsGreaterThanReservationStock",
+                httpStatusCodes.NOT_ACCEPTABLE,
+                true,
+                `The quantity is greater than the reservation stock.`
+            );
+        }
+
         const checkOrderHasProduct = await OrderHasProducts.findOne({
             where: { orderId: req.body.orderId, productId: req.body.productId },
         });
@@ -513,8 +574,11 @@ async function addProduct(req, res, next) {
                 orderId: order.id,
             });
         }
-        product.stock -= req.body.quantity;
-        product.reservationStock += req.body.quantity;
+
+        if (!product.infiniteStock) {
+            product.stock -= req.body.quantity;
+            product.reservationStock += req.body.quantity;
+        }
         order.totalPrice += product.price * req.body.quantity;
         await order.save();
         await product.save();
@@ -524,6 +588,9 @@ async function addProduct(req, res, next) {
         return res.status(200).json({
             success: true,
             message: "product added successfully.",
+            data: {
+                order
+            }
         })
     } catch (e) {
         next(e)
@@ -561,24 +628,22 @@ async function completeOrder(req, res, next) {
         order.status = "completed";
         order.deliveryDate = req.body.deliveryDate;
         order.description = req.body.description;
+        order.discount = req.body.discount;
+        order.shippingTotal = req.body.shippingTotal;
         order.deliveryTime = req.body.deliveryTime;
         order.additionsPrice = req.body.additionsPrice;
 
 
-        const customer = await Customer.findOne({
-            where: { phone: req.body.customerData.phone },
+
+        const customer = await Customer.create({
+            username: req.body.customerData.username,
+            firstname: req.body.customerData.firstname,
+            lastname: req.body.customerData.lastname,
+            email: req.body.customerData.email,
+            phoneNumber: req.body.customerData.phoneNumber,
+            businessId: business.id
         });
 
-        if (!customer) {
-            const customer = await Customer.create({
-                username: req.body.customerData.username,
-                firstname: req.body.customerData.firstname,
-                lastname: req.body.customerData.lastname,
-                email: req.body.customerData.email,
-                phone: req.body.customerData.phone,
-                businessId: business.id
-            });
-        }
         order.customerId = customer.id;
         await order.save();
 
@@ -593,35 +658,15 @@ async function completeOrder(req, res, next) {
 
         let ordersData = { order, customer, address };
 
+        order.discountPrice = ((order.totalPrice * order.discount) / 100) + order.additionsPrice + order.shippingTotal;
+        order.totalPrice = order.totalPrice + order.additionsPrice + order.shippingTotal;
+
         return res.status(200).json({
             success: true,
             message: "The completed this order.",
             data: ordersData,
         });
-        // const business = await Business.findOne({
-        //     where: { userId: req.user.id },
-        // });
-        // if (!business) {
-        //     throw new BaseErr(
-        //         "BusinessDoesNotExist",
-        //         httpStatusCodes.NOT_FOUND,
-        //         true,
-        //         `The user business not found.`
-        //     );
-        // }
 
-        // const order = await Order.findByPk(+req.body.orderId);
-        // if (order?.businessId !== business.id) {
-        //     throw new BaseErr(
-        //         "OrderDoesNotExist",
-        //         httpStatusCodes.NOT_FOUND,
-        //         true,
-        //         `The order not found.`
-        //     );
-        // }
-
-        // order = { ...order, ...req.body };
-        // order.save();
     } catch (e) {
         next(e);
     }

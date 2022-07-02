@@ -646,7 +646,7 @@ async function completeOrder(req, res, next) {
             firstname: req.body.customerData.firstname,
             lastname: req.body.customerData.lastname,
             email: req.body.customerData.email,
-            phoneNumber: req.body.customerData.phoneNumber,
+            phoneNumber: req.body.customerData.phone,
             businessId: business.id
         });
 

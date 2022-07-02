@@ -313,6 +313,21 @@ async function edit(req, res, next) {
             order.status = status;
             await order.save();
         }
+        // test commit>>>>>>>>>>>>>>>>
+        if (status === "cancelled") {
+            for (const id of req.body.ids) {
+                const order = await Order.findByPk(+id);
+                if (order?.businessId !== business.id) continue;
+                for (const item of order.items) {
+                    const product = await Product.findByPk(item.productId);
+                    product.stock += 1;
+                    product.reservationStock -= 1;
+                    await product.save();
+                }
+            }
+        }
+        // test commit>>>>>>>>>>>>>>>>
+
 
 
         return res.json({

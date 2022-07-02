@@ -638,7 +638,7 @@ async function completeOrder(req, res, next) {
         order.shippingTotal = req.body.shippingTotal;
         order.deliveryTime = req.body.deliveryTime;
         order.additionsPrice = req.body.additionsPrice;
-
+        
 
 
         const customer = await Customer.create({
@@ -651,7 +651,7 @@ async function completeOrder(req, res, next) {
         });
 
         order.customerId = customer.id;
-        await order.save();
+       
 
         const address = await Address.create({
             country: req.body.addressData.country,
@@ -662,6 +662,8 @@ async function completeOrder(req, res, next) {
             customerId: customer.id
         });
 
+        order.addressId = address.id;
+        await order.save();
 
         const orderHasProducts = await OrderHasProducts.findAll({
             where: { orderId: order.id },

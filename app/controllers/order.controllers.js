@@ -90,8 +90,6 @@ async function getAll(req, res, next) {
             );
         }
 
-        // console.log(Object.keys(Business.prototype));
-
         const orders = await business.getOrders({
             where: {
                 businessId: business.id,
@@ -103,22 +101,16 @@ async function getAll(req, res, next) {
                     include: [
                         {
                             model: Product,
-                            left: true,
                             attributes: ["id"],
+                            left: true,
                             include: [
                                 {
                                     model: ProductImage,
                                     as: "images",
                                     attributes: ["src"],
-                                },
-                                {
+                                }, {
                                     model: ProductMeta,
-                                    as: "meta",
-                                },
-                                {
-                                    model: ProductImage,
-                                    as: "images",
-                                    required: false,
+                                    as: "meta"
                                 },
                             ],
                         },
@@ -126,6 +118,12 @@ async function getAll(req, res, next) {
                 },
                 {
                     model: Customer,
+                    as: "customer"
+                },
+                {
+                    model: Address,
+                    as: "address"
+
                 },
             ],
         });
@@ -138,11 +136,45 @@ async function getAll(req, res, next) {
             );
         }
 
+
+        const oredersData = [];
+        for (let index = 0; index < orders.length; index++) {
+
+
+            let customerDataValue = {};
+            if (orders[index].customer !== null) {
+                customerDataValue = orders[index].customer.dataValues;
+            }
+
+            let addressDataValue = {};
+            if (orders[index].address !== null) {
+                addressDataValue = orders[index].address.dataValues;
+            }
+
+            let orderObject = {
+                id: orders[index].id,
+                discountTotal: orders[index].discountTotal,
+                totalPrice: orders[index].totalPrice,
+                items: orders[index].items,
+                customerData: {
+                    deliveryDate: orders[index].deliveryDate,
+                    ...customerDataValue,
+                    ...addressDataValue
+                },
+                extraData: {
+                    shippingTotal: orders[index].shippingTotal,
+                    totalTax: orders[index].totalTax,
+                    discountTotal: orders[index].discountTotal,
+                }
+
+            }
+            oredersData.push(orderObject);
+        }
+
         return res.status(200).json({
             success: true,
-            message: "The list of orders found successfully.",
-            data: orders,
-            domain: business.domain,
+            message: "The list of pending orders found successfully.",
+            data: oredersData,
         });
     } catch (e) {
         next(e);

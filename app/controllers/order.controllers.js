@@ -638,7 +638,7 @@ async function completeOrder(req, res, next) {
             firstname: req.body.customerData.firstname,
             lastname: req.body.customerData.lastname,
             email: req.body.customerData.email,
-            phone: req.body.customerData.phone,
+            phoneNumber: req.body.customerData.phoneNumber,
             businessId: business.id
         });
 
@@ -664,30 +664,7 @@ async function completeOrder(req, res, next) {
             message: "The completed this order.",
             data: ordersData,
         });
-        // const business = await Business.findOne({
-        //     where: { userId: req.user.id },
-        // });
-        // if (!business) {
-        //     throw new BaseErr(
-        //         "BusinessDoesNotExist",
-        //         httpStatusCodes.NOT_FOUND,
-        //         true,
-        //         `The user business not found.`
-        //     );
-        // }
 
-        // const order = await Order.findByPk(+req.body.orderId);
-        // if (order?.businessId !== business.id) {
-        //     throw new BaseErr(
-        //         "OrderDoesNotExist",
-        //         httpStatusCodes.NOT_FOUND,
-        //         true,
-        //         `The order not found.`
-        //     );
-        // }
-
-        // order = { ...order, ...req.body };
-        // order.save();
     } catch (e) {
         next(e);
     }

@@ -575,8 +575,10 @@ async function addProduct(req, res, next) {
             });
         }
 
-        product.stock -= req.body.quantity;
-        product.reservationStock += req.body.quantity;
+        if (!product.infiniteStock) {
+            product.stock -= req.body.quantity;
+            product.reservationStock += req.body.quantity;
+        }
         order.totalPrice += product.price * req.body.quantity;
         await order.save();
         await product.save();
@@ -655,7 +657,7 @@ async function completeOrder(req, res, next) {
         });
 
         let ordersData = { order, customer, address };
-        
+
         order.discountPrice = ((order.totalPrice * order.discount) / 100) + order.additionsPrice + order.shippingTotal;
         order.totalPrice = order.totalPrice + order.additionsPrice + order.shippingTotal;
 

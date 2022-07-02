@@ -149,7 +149,7 @@ async function getAll(req, res, next) {
     }
 }
 
-// >>>>>>>>>>>1
+
 async function create(req, res, next) {
     try {
         const business = await Business.findOne({
@@ -443,7 +443,7 @@ async function getAllPendingOrders(req, res, next) {
         next(e);
     }
 }
-// >>>>>>2
+
 async function addProduct(req, res, next) {
     try {
 
@@ -594,6 +594,8 @@ async function completeOrder(req, res, next) {
         order.status = "completed";
         order.deliveryDate = req.body.deliveryDate;
         order.description = req.body.description;
+        order.discount = req.body.discount;
+        order.shippingTotal = req.body.shippingTotal;
         order.deliveryTime = req.body.deliveryTime;
         order.additionsPrice = req.body.additionsPrice;
 
@@ -621,6 +623,9 @@ async function completeOrder(req, res, next) {
         });
 
         let ordersData = { order, customer, address };
+        
+        order.discountPrice = ((order.totalPrice * order.discount) / 100) + order.additionsPrice + order.shippingTotal;
+        order.totalPrice = order.totalPrice + order.additionsPrice + order.shippingTotal;
 
         return res.status(200).json({
             success: true,

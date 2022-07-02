@@ -9,7 +9,7 @@ const Customer = sequelize.define('customer', {
 	firstname: DataTypes.STRING,
 	lastname: DataTypes.STRING,
 	email: DataTypes.STRING,
-	phone: DataTypes.STRING
+	phone: DataTypes.STRING(15)
 }, {
 	tableName: 'customers',
 	timestamps: true,

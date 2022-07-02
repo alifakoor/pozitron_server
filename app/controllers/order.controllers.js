@@ -154,12 +154,14 @@ async function getAll(req, res, next) {
             let orderObject = {
                 id: orders[index].id,
                 discountTotal: orders[index].discountTotal,
+                discountPrice: orders[index].discountPrice,
                 totalPrice: orders[index].totalPrice,
                 items: orders[index].items,
-                staus:orders[index].status,
+                status: orders[index].status,
                 createAt: orders[index].createdAt,
                 customerData: {
                     deliveryDate: orders[index].deliveryDate,
+                    deliveryTime: orders[index].deliveryTime,
                     ...customerDataValue,
                     ...addressDataValue
                 },
@@ -311,6 +313,21 @@ async function edit(req, res, next) {
             order.status = status;
             await order.save();
         }
+        // test commit>>>>>>>>>>>>>>>>
+        if (status === "cancelled") {
+            for (const id of req.body.ids) {
+                const order = await Order.findByPk(+id);
+                if (order?.businessId !== business.id) continue;
+                for (const item of order.items) {
+                    const product = await Product.findByPk(item.productId);
+                    product.stock += 1;
+                    product.reservationStock -= 1;
+                    await product.save();
+                }
+            }
+        }
+        // test commit>>>>>>>>>>>>>>>>
+
 
 
         return res.json({
@@ -658,10 +675,32 @@ async function completeOrder(req, res, next) {
             customerId: customer.id
         });
 
-        let ordersData = { order, customer, address };
 
-        order.discountPrice = ((order.totalPrice * order.discount) / 100) + order.additionsPrice + order.shippingTotal;
+        const orderHasProducts = await OrderHasProducts.findAll({
+            where: { orderId: order.id },
+        });
+
+        for (let i = 0; i < orderHasProducts.length; i++) {
+            const product = await Product.findOne({
+                where: { id: orderHasProducts[i].productId },
+            });
+            
+            if (!product.infiniteStock) {
+                product.reservationStock -= orderHasProducts[i].quantity;
+            }
+            await product.save();
+        }
+
+
+
+        
+
+        let ordersData = { order, customer, address, orderHasProducts };
+
+        order.discountPrice = ((order.totalPrice - (order.totalPrice * order.discount) / 100)) + order.additionsPrice + order.shippingTotal;
         order.totalPrice = order.totalPrice + order.additionsPrice + order.shippingTotal;
+
+
 
         return res.status(200).json({
             success: true,

@@ -176,6 +176,22 @@ async function create(req, res, next) {
                 );
             }
         }
+
+        const items = await Product.findAll({
+            where: { businessId: business.id }
+        })
+
+        for (const item of items) {
+            if (item.barcode === req.body.barcode) {
+                throw new BaseErr(
+                    "ThisBarcodeExista",
+                    httpStatusCodes.BAD_REQUEST,
+                    true,
+                    `The product with barcode ${req.body.barcode} already exists.`
+                );
+            }
+        }
+
         const product = await Product.create({
             // ref: id,
             name: req.body.name,

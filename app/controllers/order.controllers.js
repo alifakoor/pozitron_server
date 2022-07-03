@@ -155,6 +155,7 @@ async function getAll(req, res, next) {
                 id: orders[index].id,
                 discountTotal: orders[index].discountTotal,
                 src: orders[index].src,
+                discountTotal: orders[index].discountTotal,
                 discountPrice: orders[index].discountPrice,
                 totalPrice: orders[index].totalPrice,
                 items: orders[index].items,
@@ -169,6 +170,7 @@ async function getAll(req, res, next) {
                 extraData: {
                     shippingTotal: orders[index].shippingTotal,
                     totalTax: orders[index].totalTax,
+                    additionsPrice: orders[index].additionsPrice,
                     discountTotal: orders[index].discountTotal,
                 }
 

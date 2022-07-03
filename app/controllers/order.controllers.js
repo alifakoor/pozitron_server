@@ -19,7 +19,7 @@ const BaseErr = require("../errors/baseErr");
 const httpStatusCodes = require("../errors/httpStatusCodes");
 
 // helpers
-const { calculateDiscount } = require("../helpers/product.helpers");
+const { calculateDiscount, calculateSalePrice } = require("../helpers/product.helpers");
 const { ORDER } = require("mysql/lib/PoolSelector");
 const WcHelpers = require("../helpers/wc.helpers");
 const { type } = require("os");
@@ -155,6 +155,7 @@ async function getAll(req, res, next) {
                 id: orders[index].id,
                 discountTotal: orders[index].discountTotal,
                 src: orders[index].src,
+                discountTotal: orders[index].discountTotal,
                 discountPrice: orders[index].discountPrice,
                 totalPrice: orders[index].totalPrice,
                 items: orders[index].items,
@@ -169,6 +170,7 @@ async function getAll(req, res, next) {
                 extraData: {
                     shippingTotal: orders[index].shippingTotal,
                     totalTax: orders[index].totalTax,
+                    additionsPrice: orders[index].additionsPrice,
                     discountTotal: orders[index].discountTotal,
                 }
 
@@ -193,6 +195,7 @@ async function create(req, res, next) {
             where: { userId: req.user.id },
         });
         if (!business) {
+            mber
             throw new BaseErr(
                 "BusinessDoesNotExist",
                 httpStatusCodes.NOT_FOUND,
@@ -210,6 +213,8 @@ async function create(req, res, next) {
                 `The product not found.`
             );
         }
+
+        console.log(">>>>>1");
         if (!product.stock) {
             throw new BaseErr(
                 "ProductDoesNotHaveEnoughStock",
@@ -249,6 +254,7 @@ async function create(req, res, next) {
         const orderHasProduct = await OrderHasProducts.create({
             name: product.name,
             price: product.price,
+            salePrice: product.salePrice,
             onlinePrice: product.onlinePrice,
             type: product.type,
             onlineDiscount: product.onlineDiscount,
@@ -267,8 +273,7 @@ async function create(req, res, next) {
             );
         }
 
-
-        order.totalPrice = product.price;
+        order.totalPrice = product.salePrice;
         await order.save();
 
         return res.status(200).json({
@@ -305,18 +310,41 @@ async function edit(req, res, next) {
         }
 
         for (const id of req.body.ids) {
-            const order = await Order.findByPk(+id);
+            const order = await Order.findOne({
+                where: { id },
+                include: [{
+                    model: OrderHasProducts,
+                    as: "items",
+                    include: [{
+                        model: Product,
+                        as: "product",
+                    }]
+                }]
+            });
             if (order?.businessId !== business.id) continue;
 
+
+            if (status === "cancelled") {
+                if (order.status !== "pending") {
+                    throw new BaseErr(
+                        "theOrderIsNotPending",
+                        httpStatusCodes.NOT_ACCEPTABLE,
+                        true,
+                        `the order is not pending`
+                    );
+                }
+                for (const item of order.items) {
+                    item.product.stock += item.quantity;
+                    item.product.reservationStock -= item.quantity;
+                    await item.product.save();
+                }
+            }
             if (!!business.onlineBusiness) {
                 await wc.updateOrder({ id: order.ref, status });
             }
             order.status = status;
             await order.save();
         }
-
-
-
 
         return res.json({
             success: true,
@@ -455,8 +483,13 @@ async function getAllPendingOrders(req, res, next) {
             let orderObject = {
                 id: orders[index].id,
                 discountTotal: orders[index].discountTotal,
+                src: orders[index].src,
+                discountTotal: orders[index].discountTotal,
+                discountPrice: orders[index].discountPrice,
                 totalPrice: orders[index].totalPrice,
                 items: orders[index].items,
+                status: orders[index].status,
+                createAt: orders[index].createdAt,
                 customerData: {
                     deliveryDate: orders[index].deliveryDate,
                     ...customerDataValue,
@@ -565,7 +598,7 @@ async function addProduct(req, res, next) {
             checkOrderHasProduct.quantity += req.body.quantity;
             await checkOrderHasProduct.save();
         } else {
-            await OrderHasProducts.create({
+            const orderHasproduct = await OrderHasProducts.create({
                 name: product.name,
                 price: product.price,
                 type: product.type,
@@ -580,13 +613,18 @@ async function addProduct(req, res, next) {
                 productId: product.id,
                 orderId: order.id,
             });
-        }
+            console.log(">>>>>>>>>>>>", orderHasproduct);
 
+            await orderHasproduct.save();
+        }
         if (!product.infiniteStock) {
             product.stock -= req.body.quantity;
             product.reservationStock += req.body.quantity;
         }
-        order.totalPrice += product.price * req.body.quantity;
+        if(product.reservationStock === 0){
+            await checkOrderHasProduct.destroy();
+        }
+        order.totalPrice += product.salePrice * req.body.quantity;
         await order.save();
         await product.save();
 
@@ -632,14 +670,23 @@ async function completeOrder(req, res, next) {
             );
         }
 
+        if (order.status === "completed") {
+            throw new BaseErr(
+                "OrderAlreadyCompleted",
+                httpStatusCodes.NOT_ACCEPTABLE,
+                true,
+                `The order is already completed.`
+            );
+        }
+
         order.status = "completed";
         order.deliveryDate = req.body.deliveryDate;
         order.description = req.body.description;
-        order.discountTotal = req.body.discount;
+        order.discountTotal = req.body.discountTotal;
         order.shippingTotal = req.body.shippingTotal;
         order.deliveryTime = req.body.deliveryTime;
         order.additionsPrice = req.body.additionsPrice;
-        
+
 
 
         const customer = await Customer.create({
@@ -652,7 +699,7 @@ async function completeOrder(req, res, next) {
         });
 
         order.customerId = customer.id;
-       
+
 
         const address = await Address.create({
             country: req.body.addressData.country,
@@ -687,9 +734,17 @@ async function completeOrder(req, res, next) {
 
         let ordersData = { order, customer, address, orderHasProducts };
 
-        order.discountPrice = ((order.totalPrice - (order.totalPrice * order.discount) / 100)) + order.additionsPrice + order.shippingTotal;
-        order.totalPrice = order.totalPrice + order.additionsPrice + order.shippingTotal;
+        console.log(">>>>>>1", order.discountPrice);
+        order.discountPrice = await calculateSalePrice(
+            order.totalPrice,
+            order.discountTotal
+        );
 
+        console.log(">>>>>>2", order.discountPrice);
+
+        order.discountPrice += order.additionsPrice + order.shippingTotal;
+        order.totalPrice += order.additionsPrice + order.shippingTotal;
+        await order.save();
 
 
         return res.status(200).json({

@@ -37,7 +37,6 @@ const OrderHasProducts = sequelize.define('orderHasProduct', {
 	},
 	salePrice: {
 		type: DataTypes.BIGINT,
-		defaultValue: 0
 	},
 	onlinePrice: {
 		type: DataTypes.BIGINT,

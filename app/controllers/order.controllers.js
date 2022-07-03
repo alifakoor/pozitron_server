@@ -214,7 +214,7 @@ async function create(req, res, next) {
             );
         }
 
-        console.log(">>>>>1");
+        
         if (!product.stock) {
             throw new BaseErr(
                 "ProductDoesNotHaveEnoughStock",
@@ -237,9 +237,25 @@ async function create(req, res, next) {
             });
         }
 
+        const oldOrder = await Order.findAll({
+            where: { businessId: business.id },
+        })
+        console.log(">>>>",oldOrder);
+        console.log(">>>>",oldOrder[0]);
+        let factorNumber;
+        if (!oldOrder[0]) {
+             factorNumber = 1001;
+            console.log("hello mosi");
+        }else{
+              factorNumber = oldOrder[oldOrder.length - 1].factorNumber + 1;
+            console.log("bye mosi");
+
+        }
+
         const order = await Order.create({
             src: "offline",
             orderKey: `order_key_${business.domain}`,
+            factorNumber: factorNumber, 
             businessId: business.id
         });
         if (!order) {

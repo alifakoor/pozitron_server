@@ -271,7 +271,7 @@ async function create(req, res, next) {
         }
 
 
-        order.totalPrice = product.price;
+        order.totalPrice = product.salePrice;
         await order.save();
 
         return res.status(200).json({
@@ -574,7 +574,6 @@ async function addProduct(req, res, next) {
                 type: product.type,
                 discount: product.discount,
                 salePrice: product.salePrice,
-                mohsen: product.salePrice,
                 onlinePrice: product.onlinePrice,
                 onlineDiscount: product.onlineDiscount,
                 onlineSalePrice: product.onlineSalePrice,
@@ -592,7 +591,7 @@ async function addProduct(req, res, next) {
             product.stock -= req.body.quantity;
             product.reservationStock += req.body.quantity;
         }
-        order.totalPrice += product.price * req.body.quantity;
+        order.totalPrice += product.salePrice * req.body.quantity;
         await order.save();
         await product.save();
 

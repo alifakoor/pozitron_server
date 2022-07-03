@@ -19,7 +19,7 @@ const BaseErr = require("../errors/baseErr");
 const httpStatusCodes = require("../errors/httpStatusCodes");
 
 // helpers
-const { calculateDiscount } = require("../helpers/product.helpers");
+const { calculateDiscount, calculateSalePrice } = require("../helpers/product.helpers");
 const { ORDER } = require("mysql/lib/PoolSelector");
 const WcHelpers = require("../helpers/wc.helpers");
 const { type } = require("os");
@@ -637,10 +637,19 @@ async function completeOrder(req, res, next) {
             );
         }
 
+        if (order.status === "completed") {
+            throw new BaseErr(
+                "OrderAlreadyCompleted",
+                httpStatusCodes.NOT_ACCEPTABLE,
+                true,
+                `The order is already completed.`
+            );
+        }
+
         order.status = "completed";
         order.deliveryDate = req.body.deliveryDate;
         order.description = req.body.description;
-        order.discountTotal = req.body.discount;
+        order.discountTotal = req.body.discountTotal;
         order.shippingTotal = req.body.shippingTotal;
         order.deliveryTime = req.body.deliveryTime;
         order.additionsPrice = req.body.additionsPrice;
@@ -691,10 +700,18 @@ async function completeOrder(req, res, next) {
 
 
         let ordersData = { order, customer, address, orderHasProducts };
+        
+        console.log(">>>>>>1",order.discountPrice);
+        order.discountPrice = await calculateSalePrice(
+            order.totalPrice,
+            order.discountTotal
+        );
+        
+        console.log(">>>>>>2",order.discountPrice);
 
-        order.discountPrice = ((order.totalPrice - (order.totalPrice * order.discount) / 100)) + order.additionsPrice + order.shippingTotal;
-        order.totalPrice = order.totalPrice + order.additionsPrice + order.shippingTotal;
-
+        order.discountPrice += order.additionsPrice + order.shippingTotal;
+        order.totalPrice += order.additionsPrice + order.shippingTotal;
+        await order.save();
 
 
         return res.status(200).json({

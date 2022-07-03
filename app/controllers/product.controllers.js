@@ -88,8 +88,6 @@ async function getAll(req, res, next) {
             );
         }
 
-        // console.log(Object.keys(Business.prototype));
-
         const products = await business.getProducts({
             where: {
                 type: {
@@ -665,12 +663,6 @@ async function createdWithWebhook(req, res, next) {
         });
     } catch (e) {
         next(e);
-        // console.log('cannot create products through webhooks.')
-        // console.log(err)
-        // return res.send({
-        // 	success: false,
-        // 	message: 'cannot create products through webhooks.'
-        // })
     }
 }
 async function updatedWithWebhook(req, res, next) {
@@ -735,12 +727,6 @@ async function updatedWithWebhook(req, res, next) {
         });
     } catch (e) {
         next(e);
-        // console.log('cannot update products through webhooks.')
-        // console.log(err)
-        // return res.send({
-        // 	success: false,
-        // 	message: 'cannot update products through webhooks.'
-        // })
     }
 }
 async function deletedWithWebhook(req, res, next) {
@@ -768,12 +754,6 @@ async function deletedWithWebhook(req, res, next) {
         await product.destroy();
     } catch (e) {
         next(e);
-        // console.log('cannot delete products through webhooks.')
-        // console.log(err)
-        // return res.send({
-        // 	success: false,
-        // 	message: 'cannot delete products through webhooks.'
-        // })
     }
 }
 

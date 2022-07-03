@@ -662,10 +662,8 @@ async function completeOrder(req, res, next) {
             address: req.body.addressData.address,
             customerId: customer.id
         });
-
         order.addressId = address.id;
-        await order.save();
-
+        
         const orderHasProducts = await OrderHasProducts.findAll({
             where: { orderId: order.id },
         });

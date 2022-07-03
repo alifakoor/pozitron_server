@@ -153,6 +153,7 @@ async function getAll(req, res, next) {
 
             let orderObject = {
                 id: orders[index].id,
+                factorNumber: orders[index].factorNumber,
                 discountTotal: orders[index].discountTotal,
                 src: orders[index].src,
                 discountPrice: orders[index].discountPrice,
@@ -172,7 +173,6 @@ async function getAll(req, res, next) {
                     totalTax: orders[index].totalTax,
                     additionsPrice: orders[index].additionsPrice,
                     discountTotal: orders[index].discountTotal,
-
                 }
 
             }
@@ -495,6 +495,7 @@ async function getAllPendingOrders(req, res, next) {
 
             let orderObject = {
                 id: orders[index].id,
+                 factorNumber: orders[index].factorNumber,
                 discountTotal: orders[index].discountTotal,
                 src: orders[index].src,
                 discountPrice: orders[index].discountPrice,

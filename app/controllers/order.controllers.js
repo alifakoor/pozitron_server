@@ -157,7 +157,6 @@ async function getAll(req, res, next) {
                 src: orders[index].src,
                 discountPrice: orders[index].discountPrice,
                 totalPrice: orders[index].totalPrice,
-                description: orders[index].description,
                 items: orders[index].items,
                 status: orders[index].status,
                 createAt: orders[index].createdAt,
@@ -233,15 +232,10 @@ async function create(req, res, next) {
             });
         }
 
-        const oldOrder = await Order.findAll({
-            where: { businessId: business.id }
-        })
-
         const order = await Order.create({
             src: "offline",
             orderKey: `order_key_${business.domain}`,
-            businessId: business.id,
-            factorNumber: 1000 + oldOrder.length,
+            businessId: business.id
         });
         if (!order) {
             throw new BaseErr(
@@ -310,52 +304,28 @@ async function edit(req, res, next) {
             );
         }
 
-
-
-        let data = [];
         for (const id of req.body.ids) {
-            const order = await Order.findOne({
-                where: { id },
-                include: [{
-                    model: OrderHasProducts,
-                    as: "items",
-                    include: [{
-                        model: Product,
-                        as: "product",
-                    }]
-                }]
-            });
+            const order = await Order.findByPk(+id);
             if (order?.businessId !== business.id) continue;
-            
 
-            if( status === "cancelled" && order.status !== "cancelled"){
-                for (const item of order.items) {
-                    item.product.stock += item.quantity;
-                    item.product.reservationStock -= item.quantity;
-                    await item.product.save();
-                }  
+            if (!!business.onlineBusiness) {
+                await wc.updateOrder({ id: order.ref, status });
             }
-
             order.status = status;
             await order.save();
         }
 
-        
 
 
 
         return res.json({
             success: true,
             message: "The order have been updated successfully.",
-            data: data
-
         });
     } catch (e) {
         next(e);
     }
 }
-
-
 async function remove(req, res, next) {
     try {
         const business = await Business.findOne({
@@ -593,9 +563,6 @@ async function addProduct(req, res, next) {
         });
         if (checkOrderHasProduct) {
             checkOrderHasProduct.quantity += req.body.quantity;
-            if(checkOrderHasProduct.quantity === 0){
-                await checkOrderHasProduct.destroy();
-            }
             await checkOrderHasProduct.save();
         } else {
             await OrderHasProducts.create({
@@ -619,7 +586,6 @@ async function addProduct(req, res, next) {
             product.stock -= req.body.quantity;
             product.reservationStock += req.body.quantity;
         }
-        
         order.totalPrice += product.price * req.body.quantity;
         await order.save();
         await product.save();
@@ -673,7 +639,7 @@ async function completeOrder(req, res, next) {
         order.shippingTotal = req.body.shippingTotal;
         order.deliveryTime = req.body.deliveryTime;
         order.additionsPrice = req.body.additionsPrice;
-
+        
 
 
         const customer = await Customer.create({
@@ -686,7 +652,7 @@ async function completeOrder(req, res, next) {
         });
 
         order.customerId = customer.id;
-
+       
 
         const address = await Address.create({
             country: req.body.addressData.country,
@@ -696,7 +662,9 @@ async function completeOrder(req, res, next) {
             address: req.body.addressData.address,
             customerId: customer.id
         });
+
         order.addressId = address.id;
+        await order.save();
 
         const orderHasProducts = await OrderHasProducts.findAll({
             where: { orderId: order.id },
@@ -721,7 +689,6 @@ async function completeOrder(req, res, next) {
 
         order.discountPrice = ((order.totalPrice - (order.totalPrice * order.discount) / 100)) + order.additionsPrice + order.shippingTotal;
         order.totalPrice = order.totalPrice + order.additionsPrice + order.shippingTotal;
-        await order.save();
 
 
 

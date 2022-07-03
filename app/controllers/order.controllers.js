@@ -241,16 +241,12 @@ async function create(req, res, next) {
         const oldOrder = await Order.findAll({
             where: { businessId: business.id },
         })
-        console.log(">>>>",oldOrder);
-        console.log(">>>>",oldOrder[0]);
+
         let factorNumber;
         if (!oldOrder[0]) {
              factorNumber = 1001;
-            console.log("hello mosi");
         }else{
               factorNumber = oldOrder[oldOrder.length - 1].factorNumber + 1;
-            console.log("bye mosi");
-
         }
 
         const order = await Order.create({
@@ -631,8 +627,6 @@ async function addProduct(req, res, next) {
                 productId: product.id,
                 orderId: order.id,
             });
-            console.log(">>>>>>>>>>>>", orderHasproduct);
-
             await orderHasproduct.save();
         }
         if (!product.infiniteStock) {
@@ -645,8 +639,6 @@ async function addProduct(req, res, next) {
         order.totalPrice += product.salePrice * req.body.quantity;
         await order.save();
         await product.save();
-
-        // console.log(order.items);
 
         return res.status(200).json({
             success: true,
@@ -707,14 +699,6 @@ async function completeOrder(req, res, next) {
         order.totalPrice = Number(order.totalPrice);
         order.discountTotal = Number(order.discountTotal);
 
-        console.log(">>>>>>>>>>order.discountTotal",order.discountTotal);
-        console.log(">>>>>>>>>>order.shippingTotal",order.shippingTotal);
-        console.log(">>>>>>>>>>order.additionsPrice",order.additionsPrice);
-        console.log(">>>>>>>>>>order.totalPrice",order.totalPrice);
-        console.log(">>>>>>>>>>order.discountTotal",order.discountTotal);
-
-
-
         const customer = await Customer.create({
             username: req.body.customerData.username,
             firstname: req.body.customerData.firstname,
@@ -754,20 +738,12 @@ async function completeOrder(req, res, next) {
             await product.save();
         }
 
-
-
-
-
         let ordersData = { order, customer, address, orderHasProducts };
 
-
-        console.log(">>>>>>1", order.discountPrice);
         order.discountPrice = await calculateSalePrice(
             order.totalPrice,
             order.discountTotal
         );
-
-        console.log(">>>>>>2", order.discountPrice);
 
         order.discountPrice += order.additionsPrice + order.shippingTotal;
         order.totalPrice += order.additionsPrice + order.shippingTotal;
@@ -864,8 +840,6 @@ async function addProductToOrder(userId, orderId, productId) {
 
         return true;
     } catch (e) {
-        console.log("controller: addProductToOrder");
-        console.log(e);
         return false;
     }
 }
@@ -902,8 +876,6 @@ async function getPendingOrders(userId) {
         }
 
     } catch (e) {
-        console.log("get all pending orders:");
-        console.log(e?.message);
         return false;
     }
 }

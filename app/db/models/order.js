@@ -24,6 +24,10 @@ const Order = sequelize.define('order', {
 			max: 100
 		}
 	},
+	factorNumber:{
+		type: DataTypes.INTEGER,
+		allowNull: false,
+	},
 	shippingTotal: {
 		type: DataTypes.INTEGER,
 		defaultValue: 0,
@@ -72,6 +76,10 @@ const Order = sequelize.define('order', {
 		{
 			unique: true,
 			fields: ['ref', 'businessId']
+		},
+		{
+			unique: true,
+			fields: ['factorNumber', 'businessId']
 		}
 	]
 });

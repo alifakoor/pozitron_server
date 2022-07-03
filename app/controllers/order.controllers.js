@@ -156,6 +156,7 @@ async function getAll(req, res, next) {
                 discountTotal: orders[index].discountTotal,
                 discountPrice: orders[index].discountPrice,
                 totalPrice: orders[index].totalPrice,
+                description: orders[index].description,
                 items: orders[index].items,
                 status: orders[index].status,
                 createAt: orders[index].createdAt,
@@ -688,6 +689,7 @@ async function completeOrder(req, res, next) {
 
         order.discountPrice = ((order.totalPrice - (order.totalPrice * order.discount) / 100)) + order.additionsPrice + order.shippingTotal;
         order.totalPrice = order.totalPrice + order.additionsPrice + order.shippingTotal;
+        await order.save();
 
 
 

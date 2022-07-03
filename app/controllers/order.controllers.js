@@ -331,10 +331,6 @@ async function edit(req, res, next) {
                 for (const item of order.items) {
                     item.product.stock += item.quantity;
                     item.product.reservationStock -= item.quantity;
-
-                    OrderHasProducts.destroy({
-                        where: { id: item.id }
-                    })
                     await item.product.save();
                 }  
             }

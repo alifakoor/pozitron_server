@@ -7,6 +7,11 @@ const Order = sequelize.define('order', {
 	ref: DataTypes.BIGINT.UNSIGNED, // woocommerce order's id
 	src: DataTypes.ENUM('online', 'offline'),
 	orderKey: DataTypes.STRING,
+	factorNumber: {
+		type: DataTypes.STRING,
+		allowNull: false,
+		unique: true,
+	},
 	status: {
 		type: DataTypes.ENUM('any', 'pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed', 'trash'),
 		defaultValue: 'pending'

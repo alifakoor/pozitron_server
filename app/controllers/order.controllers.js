@@ -210,6 +210,8 @@ async function create(req, res, next) {
                 `The product not found.`
             );
         }
+
+        console.log(">>>>>1");
         if (!product.stock) {
             throw new BaseErr(
                 "ProductDoesNotHaveEnoughStock",
@@ -249,6 +251,7 @@ async function create(req, res, next) {
         const orderHasProduct = await OrderHasProducts.create({
             name: product.name,
             price: product.price,
+            salePrice: product.salePrice,
             onlinePrice: product.onlinePrice,
             type: product.type,
             onlineDiscount: product.onlineDiscount,
@@ -565,12 +568,13 @@ async function addProduct(req, res, next) {
             checkOrderHasProduct.quantity += req.body.quantity;
             await checkOrderHasProduct.save();
         } else {
-            await OrderHasProducts.create({
+            const orderHasproduct = await OrderHasProducts.create({
                 name: product.name,
                 price: product.price,
                 type: product.type,
                 discount: product.discount,
                 salePrice: product.salePrice,
+                mohsen: product.salePrice,
                 onlinePrice: product.onlinePrice,
                 onlineDiscount: product.onlineDiscount,
                 onlineSalePrice: product.onlineSalePrice,
@@ -580,8 +584,10 @@ async function addProduct(req, res, next) {
                 productId: product.id,
                 orderId: order.id,
             });
-        }
+        console.log(">>>>>>>>>>>>",orderHasproduct);
 
+        await orderHasproduct.save();
+        }
         if (!product.infiniteStock) {
             product.stock -= req.body.quantity;
             product.reservationStock += req.body.quantity;

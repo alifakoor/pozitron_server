@@ -483,8 +483,13 @@ async function getAllPendingOrders(req, res, next) {
             let orderObject = {
                 id: orders[index].id,
                 discountTotal: orders[index].discountTotal,
+                src: orders[index].src,
+                discountTotal: orders[index].discountTotal,
+                discountPrice: orders[index].discountPrice,
                 totalPrice: orders[index].totalPrice,
                 items: orders[index].items,
+                status: orders[index].status,
+                createAt: orders[index].createdAt,
                 customerData: {
                     deliveryDate: orders[index].deliveryDate,
                     ...customerDataValue,

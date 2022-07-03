@@ -160,6 +160,7 @@ async function getAll(req, res, next) {
                 totalPrice: orders[index].totalPrice,
                 items: orders[index].items,
                 status: orders[index].status,
+                discription: orders[index].discription,
                 createAt: orders[index].createdAt,
                 customerData: {
                     deliveryDate: orders[index].deliveryDate,
@@ -503,6 +504,7 @@ async function getAllPendingOrders(req, res, next) {
                 discountTotal: orders[index].discountTotal,
                 discountPrice: orders[index].discountPrice,
                 totalPrice: orders[index].totalPrice,
+                discription: orders[index].discription,
                 items: orders[index].items,
                 status: orders[index].status,
                 createAt: orders[index].createdAt,
@@ -637,7 +639,7 @@ async function addProduct(req, res, next) {
             product.stock -= req.body.quantity;
             product.reservationStock += req.body.quantity;
         }
-        if(product.reservationStock === 0){
+        if(checkOrderHasProduct.quantity === 0){
             await checkOrderHasProduct.destroy();
         }
         order.totalPrice += product.salePrice * req.body.quantity;

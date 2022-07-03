@@ -155,7 +155,6 @@ async function getAll(req, res, next) {
                 id: orders[index].id,
                 discountTotal: orders[index].discountTotal,
                 src: orders[index].src,
-                discountTotal: orders[index].discountTotal,
                 discountPrice: orders[index].discountPrice,
                 totalPrice: orders[index].totalPrice,
                 items: orders[index].items,
@@ -173,6 +172,7 @@ async function getAll(req, res, next) {
                     totalTax: orders[index].totalTax,
                     additionsPrice: orders[index].additionsPrice,
                     discountTotal: orders[index].discountTotal,
+
                 }
 
             }
@@ -501,7 +501,6 @@ async function getAllPendingOrders(req, res, next) {
                 id: orders[index].id,
                 discountTotal: orders[index].discountTotal,
                 src: orders[index].src,
-                discountTotal: orders[index].discountTotal,
                 discountPrice: orders[index].discountPrice,
                 totalPrice: orders[index].totalPrice,
                 discription: orders[index].discription,
@@ -517,6 +516,7 @@ async function getAllPendingOrders(req, res, next) {
                     shippingTotal: orders[index].shippingTotal,
                     totalTax: orders[index].totalTax,
                     discountTotal: orders[index].discountTotal,
+                    additionsPrice: orders[index].additionsPrice,
                 }
 
             }
@@ -700,10 +700,18 @@ async function completeOrder(req, res, next) {
         order.status = "completed";
         order.deliveryDate = req.body.deliveryDate;
         order.description = req.body.description;
-        order.discountTotal = req.body.discountTotal;
-        order.shippingTotal = req.body.shippingTotal;
+        order.discountTotal = Number(req.body.discountTotal);
+        order.shippingTotal = Number(req.body.shippingTotal);
         order.deliveryTime = req.body.deliveryTime;
-        order.additionsPrice = req.body.additionsPrice;
+        order.additionsPrice = Number(req.body.additionsPrice);
+        order.totalPrice = Number(order.totalPrice);
+        order.discountTotal = Number(order.discountTotal);
+
+        console.log(">>>>>>>>>>order.discountTotal",order.discountTotal);
+        console.log(">>>>>>>>>>order.shippingTotal",order.shippingTotal);
+        console.log(">>>>>>>>>>order.additionsPrice",order.additionsPrice);
+        console.log(">>>>>>>>>>order.totalPrice",order.totalPrice);
+        console.log(">>>>>>>>>>order.discountTotal",order.discountTotal);
 
 
 
@@ -751,6 +759,7 @@ async function completeOrder(req, res, next) {
 
 
         let ordersData = { order, customer, address, orderHasProducts };
+
 
         console.log(">>>>>>1", order.discountPrice);
         order.discountPrice = await calculateSalePrice(

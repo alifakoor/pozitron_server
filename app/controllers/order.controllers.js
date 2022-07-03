@@ -232,10 +232,15 @@ async function create(req, res, next) {
             });
         }
 
+        const oldOrder = await Order.findAll({
+            where: { businessId: business.id}
+        })
+        
         const order = await Order.create({
             src: "offline",
             orderKey: `order_key_${business.domain}`,
-            businessId: business.id
+            businessId: business.id,
+            factorNumber: 1000 + oldOrder.length ,
         });
         if (!order) {
             throw new BaseErr(

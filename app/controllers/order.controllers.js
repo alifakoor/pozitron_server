@@ -195,6 +195,7 @@ async function create(req, res, next) {
             where: { userId: req.user.id },
         });
         if (!business) {
+            mber
             throw new BaseErr(
                 "BusinessDoesNotExist",
                 httpStatusCodes.NOT_FOUND,
@@ -272,7 +273,6 @@ async function create(req, res, next) {
             );
         }
 
-
         order.totalPrice = product.salePrice;
         await order.save();
 
@@ -310,18 +310,41 @@ async function edit(req, res, next) {
         }
 
         for (const id of req.body.ids) {
-            const order = await Order.findByPk(+id);
+            const order = await Order.findOne({
+                where: { id },
+                include: [{
+                    model: OrderHasProducts,
+                    as: "items",
+                    include: [{
+                        model: Product,
+                        as: "product",
+                    }]
+                }]
+            });
             if (order?.businessId !== business.id) continue;
 
+
+            if (status === "cancelled") {
+                if (order.status !== "pending") {
+                    throw new BaseErr(
+                        "theOrderIsNotPending",
+                        httpStatusCodes.NOT_ACCEPTABLE,
+                        true,
+                        `the order is not pending`
+                    );
+                }
+                for (const item of order.items) {
+                    item.product.stock += item.quantity;
+                    item.product.reservationStock -= item.quantity;
+                    await item.product.save();
+                }
+            }
             if (!!business.onlineBusiness) {
                 await wc.updateOrder({ id: order.ref, status });
             }
             order.status = status;
             await order.save();
         }
-
-
-
 
         return res.json({
             success: true,
@@ -585,9 +608,9 @@ async function addProduct(req, res, next) {
                 productId: product.id,
                 orderId: order.id,
             });
-        console.log(">>>>>>>>>>>>",orderHasproduct);
+            console.log(">>>>>>>>>>>>", orderHasproduct);
 
-        await orderHasproduct.save();
+            await orderHasproduct.save();
         }
         if (!product.infiniteStock) {
             product.stock -= req.body.quantity;
@@ -655,7 +678,7 @@ async function completeOrder(req, res, next) {
         order.shippingTotal = req.body.shippingTotal;
         order.deliveryTime = req.body.deliveryTime;
         order.additionsPrice = req.body.additionsPrice;
-        
+
 
 
         const customer = await Customer.create({
@@ -668,7 +691,7 @@ async function completeOrder(req, res, next) {
         });
 
         order.customerId = customer.id;
-       
+
 
         const address = await Address.create({
             country: req.body.addressData.country,
@@ -702,14 +725,14 @@ async function completeOrder(req, res, next) {
 
 
         let ordersData = { order, customer, address, orderHasProducts };
-        
-        console.log(">>>>>>1",order.discountPrice);
+
+        console.log(">>>>>>1", order.discountPrice);
         order.discountPrice = await calculateSalePrice(
             order.totalPrice,
             order.discountTotal
         );
-        
-        console.log(">>>>>>2",order.discountPrice);
+
+        console.log(">>>>>>2", order.discountPrice);
 
         order.discountPrice += order.additionsPrice + order.shippingTotal;
         order.totalPrice += order.additionsPrice + order.shippingTotal;

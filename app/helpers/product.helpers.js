@@ -9,11 +9,13 @@ function calculateDiscount(regularPrice, salePrice) {
 	return Math.floor(((regularPrice - salePrice) * 100) / regularPrice)
 }
 function calculateSalePrice(regularPrice, discount) {
-	if (regularPrice === "" || discount === "") return 0
-	if (regularPrice === undefined || discount === undefined) return 0
+	if (discount === 0 || discount === "" || discount === undefined) return regularPrice
+	if (regularPrice === "") return 0
+	if (regularPrice === undefined) return 0
 	regularPrice = Number(regularPrice)
 	discount = Number(discount)
-	if (discount === 0) return regularPrice
+	// if (regularPrice === "" || discount === "") return 0
+	// if (regularPrice === undefined || discount === undefined) return 0
 	return Math.floor(regularPrice * ((100 - discount) / 100))
 }
 function calculateDimension(length, width, height) {

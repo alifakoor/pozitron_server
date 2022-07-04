@@ -9,16 +9,10 @@ const Customer = sequelize.define('customer', {
 	firstname: DataTypes.STRING,
 	lastname: DataTypes.STRING,
 	email: DataTypes.STRING,
-
+	phoneNumber: DataTypes.STRING(15),
 }, {
 	tableName: 'customers',
-	timestamps: true,
-	indexes: [
-		{
-			unique: true,
-			fields: ['ref', 'businessId']
-		}
-	]
+	timestamps: true
 });
 
 module.exports = Customer;

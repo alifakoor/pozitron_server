@@ -12,13 +12,19 @@ const {
 	remove,
 	createdWithWebhook,
 	updatedWithWebhook,
-	deletedWithWebhook
+	deletedWithWebhook,
+	getAllPendingOrders,
+	completeOrder,
+	addProduct
 } = require('../../controllers/order.controllers');
 
 router.get('', verifyToken, getAll);
 router.post('', verifyToken, checkInputsBeforeCreate, create);
 router.put('', verifyToken, edit);
 router.delete('', verifyToken, remove);
+router.post('/add_product', verifyToken, addProduct)
+router.get('/pending_orders', verifyToken, getAllPendingOrders)
+router.post('/complete_order', verifyToken, completeOrder)
 
 router.post('/webhook/create/:businessId/:businessKey', verifyWebhook, createdWithWebhook);
 router.post('/webhook/update/:businessId/:businessKey', verifyWebhook, updatedWithWebhook);

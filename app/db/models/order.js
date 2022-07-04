@@ -11,6 +11,7 @@ const Order = sequelize.define('order', {
 		type: DataTypes.ENUM('any', 'pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed', 'trash'),
 		defaultValue: 'pending'
 	},
+	description: DataTypes.TEXT,
 	currency: {
 		type: DataTypes.ENUM('IRR', 'IRT', 'USD', 'EUR'),
 		defaultValue: 'IRT'
@@ -23,6 +24,10 @@ const Order = sequelize.define('order', {
 			max: 100
 		}
 	},
+	factorNumber:{
+		type: DataTypes.INTEGER,
+		allowNull: false,
+	},
 	shippingTotal: {
 		type: DataTypes.INTEGER,
 		defaultValue: 0,
@@ -30,6 +35,14 @@ const Order = sequelize.define('order', {
 			min: 0
 		}
 	},
+	discountPrice: {
+		type: DataTypes.BIGINT,
+		defaultValue: 0,
+		validate: {
+			min: 0
+		}
+	},
+
 	totalPrice: {
 		type: DataTypes.BIGINT,
 		defaultValue: 0,
@@ -37,6 +50,7 @@ const Order = sequelize.define('order', {
 			min: 0
 		}
 	},
+	
 	totalTax: {
 		type: DataTypes.BIGINT,
 		defaultValue: 0,
@@ -44,7 +58,17 @@ const Order = sequelize.define('order', {
 			min: 0
 		}
 	},
-	deliveryDate: DataTypes.DATEONLY
+	additionsPrice: {
+		type: DataTypes.BIGINT,
+		defaultValue: 0,
+		validate: {
+			min: 0
+		}
+	},
+	deliveryDate: DataTypes.DATEONLY,
+	deliveryTime: {
+		type: DataTypes.ENUM('8-10', '10-12', '12-14', '14-16', '16-18', '18-20', '20-22', '22-24')
+	}
 }, {
 	tableName: 'orders',
 	timestamps: true,
@@ -52,6 +76,10 @@ const Order = sequelize.define('order', {
 		{
 			unique: true,
 			fields: ['ref', 'businessId']
+		},
+		{
+			unique: true,
+			fields: ['factorNumber', 'businessId']
 		}
 	]
 });

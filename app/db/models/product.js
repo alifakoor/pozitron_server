@@ -84,6 +84,10 @@ const Product = sequelize.define('product', {
 		type: DataTypes.INTEGER,
 		defaultValue: 0
 	},
+	reservationStock: {
+		type: DataTypes.INTEGER,
+		defaultValue: 0
+	},
 	onlineSell: {
 		type: DataTypes.BOOLEAN,
 		defaultValue: false
@@ -97,10 +101,10 @@ const Product = sequelize.define('product', {
 			unique: true,
 			fields: ['ref', 'businessId']
 		},
-		// {
-		// 	unique: true,
-		// 	fields: ['barcode', 'businessId']
-		// }
+		{
+			unique: true,
+			fields: ['barcode', 'businessId']
+		}
 	]
 });
 

@@ -14,6 +14,19 @@ const OrderHasProducts = sequelize.define('orderHasProduct', {
 		type: DataTypes.BIGINT,
 		defaultValue: 0,
 	},
+	type: {
+		type: DataTypes.ENUM('simple', 'variable', 'variation', 'composite', 'bundle'),
+		defaultValue: 'simple',
+		validate: {
+			isIn: [[
+				'simple',
+				'variable',
+				'variation',
+				'composite',
+				'bundle'
+			]]
+		}
+	},
 	discount: {
 		type: DataTypes.INTEGER,
 		defaultValue: 0,
@@ -24,7 +37,6 @@ const OrderHasProducts = sequelize.define('orderHasProduct', {
 	},
 	salePrice: {
 		type: DataTypes.BIGINT,
-		defaultValue: 0
 	},
 	onlinePrice: {
 		type: DataTypes.BIGINT,

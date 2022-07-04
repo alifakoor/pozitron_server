@@ -3,8 +3,8 @@
 .idea/
 /app/db/config.js
 server.js
-.gitlab-ci.yml
 .development.env
 .production.env
 .test.env
 /app/public/uploads
+.gitlab-ci.yml

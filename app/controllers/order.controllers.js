@@ -352,6 +352,12 @@ async function edit(req, res, next) {
                     await item.product.save();
                 }
             }
+            if (status === "pending") {
+                for (const item of order.items) {
+                    item.product.reservationStock += item.quantity;
+                    await item.product.save();
+                }
+            }
             if (!!business.onlineBusiness) {
                 await wc.updateOrder({ id: order.ref, status });
             }

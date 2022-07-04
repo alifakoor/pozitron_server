@@ -634,7 +634,7 @@ async function addProduct(req, res, next) {
             product.stock -= req.body.quantity;
             product.reservationStock += req.body.quantity;
         }
-        if(checkOrderHasProduct.quantity === 0 && req.body.quantity<0){
+        if(req.body.quantity<0 && checkOrderHasProduct.quantity === 0  ){
             await checkOrderHasProduct.destroy();
         }
         order.totalPrice += product.salePrice * req.body.quantity;

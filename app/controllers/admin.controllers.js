@@ -4,14 +4,15 @@
 const jwt = require('jsonwebtoken')
 
 // database instance
-const db = require('../db/conn');
+const User = require("../db/models/user");
+const Business = require("../db/models/business");
 
 // functions
 function loginPage(req, res) {
 	res.render('admin/login', { page: 'login' });
 }
 async function login(req, res) {
-	if(req.body.username !== 'pozitron_admin' || req.body.password !== 'AEG2jWf2c3ZfCY8c') {
+	if (req.body.username !== 'pozitron_admin' || req.body.password !== 'AEG2jWf2c3ZfCY8c') {
 		return res.status(406).send({ success: false, message: 'The username or password is not correct.' });
 	}
 
@@ -26,14 +27,12 @@ async function login(req, res) {
 	return res.status(200).send({ success: true, message: 'Login successfully.', token })
 }
 async function panelPage(req, res) {
-	try{
-		const users = await db.user.findAll({
-			include: {
-				model: db.business
-			}
+	try {
+		const users = await User.findAll({
+			include: [{ model: Business }]
 		});
 		res.render('admin/panel', { page: 'panel', users });
-	} catch(err) {
+	} catch (err) {
 		console.log(err);
 		res.status(500).send({ success: false, message: 'Internal Server Error.' });
 	}

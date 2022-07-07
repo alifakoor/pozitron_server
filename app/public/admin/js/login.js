@@ -3,6 +3,7 @@ const username = document.getElementById('usernameInput');
 const password = document.getElementById('passwordInput');
 const alert = document.getElementById('alert');
 
+
 button.onclick = function() {
 	if (checkInputs()) {
 		fetch('/admin', {

@@ -215,7 +215,7 @@ async function create(req, res, next) {
             );
         }
 
-        
+
         if (!product.stock) {
             throw new BaseErr(
                 "ProductDoesNotHaveEnoughStock",
@@ -244,15 +244,15 @@ async function create(req, res, next) {
 
         let factorNumber;
         if (!oldOrder[0]) {
-             factorNumber = 1001;
-        }else{
-              factorNumber = oldOrder[oldOrder.length - 1].factorNumber + 1;
+            factorNumber = 1001;
+        } else {
+            factorNumber = oldOrder[oldOrder.length - 1].factorNumber + 1;
         }
 
         const order = await Order.create({
             src: "offline",
             orderKey: `order_key_${business.domain}`,
-            factorNumber: factorNumber, 
+            factorNumber: factorNumber,
             businessId: business.id
         });
         if (!order) {
@@ -336,26 +336,50 @@ async function edit(req, res, next) {
             });
             if (order?.businessId !== business.id) continue;
 
-
-            if (status === "cancelled") {
-                if (order.status !== "pending") {
-                    throw new BaseErr(
-                        "theOrderIsNotPending",
-                        httpStatusCodes.NOT_ACCEPTABLE,
-                        true,
-                        `the order is not pending`
-                    );
+            if (status === "cancelled" || status === "refunded") {
+                if(order.status === "pending" || order.status === "processing") {
+                    for (const item of order.items) {
+                        item.product.stock += item.quantity;
+                        item.product.reservationStock -= item.quantity;
+                        await item.product.save();
+                    }
                 }
-                for (const item of order.items) {
-                    item.product.stock += item.quantity;
-                    item.product.reservationStock -= item.quantity;
-                    await item.product.save();
+                if(order.status ==="completed"){
+                    for (const item of order.items) {
+                        item.product.reservationStock += item.quantity;
+                        await item.product.save();
+                    }
                 }
             }
-            if (status === "pending") {
-                for (const item of order.items) {
-                    item.product.reservationStock += item.quantity;
-                    await item.product.save();
+
+            if(status === "completed"){
+                if(order.status === "processing" || order.status === "pending"){
+                    for (const item of order.items) {
+                        item.product.reservationStock -= item.quantity;
+                        await item.product.save();
+                    }
+                }
+                if(order.status ==="cancelled" || order.status === "refunded"){
+                    for (const item of order.items) {
+                        item.product.stock -= item.quantity;
+                        await item.product.save();
+                    }
+                }
+            }
+
+            if (status === "pending" || status === "processing") {
+                if(order.status === "completed"){
+                    for (const item of order.items) {
+                        item.product.reservationStock += item.quantity;
+                        await item.product.save();
+                    }
+                }
+                if(order.status === "cancelled" || order.status === "refunded"){
+                    for (const item of order.items) {
+                        item.product.stock -= item.quantity;
+                        item.product.reservationStock += item.quantity;
+                        await item.product.save();
+                    }
                 }
             }
             if (!!business.onlineBusiness) {
@@ -501,7 +525,7 @@ async function getAllPendingOrders(req, res, next) {
 
             let orderObject = {
                 id: orders[index].id,
-                 factorNumber: orders[index].factorNumber,
+                factorNumber: orders[index].factorNumber,
                 discountTotal: orders[index].discountTotal,
                 src: orders[index].src,
                 discountPrice: orders[index].discountPrice,
@@ -640,7 +664,7 @@ async function addProduct(req, res, next) {
             product.stock -= req.body.quantity;
             product.reservationStock += req.body.quantity;
         }
-        if(req.body.quantity<0 && checkOrderHasProduct.quantity === 0  ){
+        if (req.body.quantity < 0 && checkOrderHasProduct.quantity === 0) {
             await checkOrderHasProduct.destroy();
         }
         order.totalPrice += product.salePrice * req.body.quantity;
@@ -696,7 +720,7 @@ async function completeOrder(req, res, next) {
             );
         }
 
-        order.status = "completed";
+        order.status = "processing";
         order.deliveryDate = req.body.deliveryDate;
         order.description = req.body.description;
         order.discountTotal = Number(req.body.discountTotal);
@@ -728,22 +752,26 @@ async function completeOrder(req, res, next) {
         });
 
         order.addressId = address.id;
-        await order.save();
 
         const orderHasProducts = await OrderHasProducts.findAll({
             where: { orderId: order.id },
         });
 
-        for (let i = 0; i < orderHasProducts.length; i++) {
-            const product = await Product.findOne({
-                where: { id: orderHasProducts[i].productId },
-            });
+        if (!req.body.deliveryDate && !req.body.deliveryTime) {
+            for (let i = 0; i < orderHasProducts.length; i++) {
+                const product = await Product.findOne({
+                    where: { id: orderHasProducts[i].productId },
+                });
 
-            if (!product.infiniteStock) {
-                product.reservationStock -= orderHasProducts[i].quantity;
+                if (!product.infiniteStock) {
+                    product.reservationStock -= orderHasProducts[i].quantity;
+                }
+                await product.save();
             }
-            await product.save();
+            order.status = "completed";
+            console.log("hello mosi");
         }
+        await order.save();
 
         let ordersData = { order, customer, address, orderHasProducts };
 
@@ -759,7 +787,7 @@ async function completeOrder(req, res, next) {
 
         return res.status(200).json({
             success: true,
-            message: "The completed this order.",
+            message: `The ${order.status} this order.`,
             data: ordersData,
         });
 
